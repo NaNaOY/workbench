@@ -184,6 +184,7 @@ function isSafeWebUrl(rawUrl: unknown): rawUrl is string {
 }
 
 const dailyCache: Partial<Record<CognitionMode, Awaited<ReturnType<typeof fetchCognitionContent>>>> = {};
+let growthRotation = 0;
 
 function millisecondsUntilNextEight() {
   const now = new Date();
@@ -193,12 +194,12 @@ function millisecondsUntilNextEight() {
   return next.getTime() - now.getTime();
 }
 
-async function refreshDailyCache(mode: CognitionMode, showNotification: boolean) {
-  const response = await fetchCognitionContent('digest', mode);
+async function refreshDailyCache(mode: CognitionMode, showNotification: boolean, rotation = 0) {
+  const response = await fetchCognitionContent('digest', mode, rotation);
   dailyCache[mode] = response;
   if (showNotification && Notification.isSupported() && response.items[0]) {
     new Notification({
-      title: mode === 'current' ? '每日时政已更新' : '认知提升已更新',
+      title: mode === 'current' ? '每日资讯已更新' : '认知提升已更新',
       body: response.items[0].title.slice(0, 180),
     }).show();
   }
@@ -229,8 +230,9 @@ export function registerContentIpc() {
     force = false,
   ) => {
     const selectedMode: CognitionMode = mode === 'growth' ? 'growth' : 'current';
-    if (category === 'digest') return force ? refreshDailyCache(selectedMode, false) : dailyCache[selectedMode] ?? refreshDailyCache(selectedMode, false);
-    return fetchCognitionContent(category, selectedMode);
+    const rotation = force && selectedMode === 'growth' ? ++growthRotation : 0;
+    if (category === 'digest') return force ? refreshDailyCache(selectedMode, false, rotation) : dailyCache[selectedMode] ?? refreshDailyCache(selectedMode, false);
+    return fetchCognitionContent(category, selectedMode, rotation);
   });
   ipcMain.handle('content:get-github', (_event, request: GitHubRankingRequest) => fetchGitHubRanking(request));
   ipcMain.handle('content:open-external', async (_event, rawUrl: unknown) => {

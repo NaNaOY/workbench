@@ -84,6 +84,15 @@
   line-height: 1.5;
 }
 
+.cognition-status em {
+  color: #2d8a63;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.cognition-page--growth .cognition-status em { color: #98601f; }
+
 .cognition-status button {
   min-height: 40px;
   margin-top: 3px;
@@ -497,6 +506,155 @@
   line-height: 1.5;
 }
 
+
+.cognition-question-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.cognition-question-actions small {
+  flex: 1;
+  margin: 0;
+}
+
+.cognition-question-actions button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 15px;
+  border: 1px solid rgba(204, 213, 255, .28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .13);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.cognition-question-actions button:hover {
+  background: rgba(255, 255, 255, .2);
+}
+
+.cognition-question-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.cognition-output {
+  padding: 26px;
+  border: 1px solid #e1e5ed;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(31, 37, 58, .035);
+}
+
+.cognition-output-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.cognition-output-head h2 {
+  margin: 6px 0 0;
+  color: #273047;
+  font-size: 20px;
+}
+
+.cognition-output-head > span {
+  color: #838b9e;
+  font-size: 11px;
+}
+
+.cognition-output-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cognition-output-list article {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #e6e9f0;
+  border-radius: 12px;
+  background: #fafbfe;
+}
+
+.cognition-page--growth .cognition-output-list article {
+  border-color: #efe3d1;
+  background: #fffbf5;
+}
+
+.cognition-output-list article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cognition-output-list article > div span {
+  color: #5864c5;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.cognition-page--growth .cognition-output-list article > div span { color: #956126; }
+
+.cognition-output-list article > div small {
+  color: #9299a9;
+  font-size: 10px;
+}
+
+.cognition-output-list strong {
+  display: block;
+  margin-top: 12px;
+  color: #30384d;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.cognition-output-list p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 8px 0 0;
+  color: #626c80;
+  font-size: 12px;
+  line-height: 1.7;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.cognition-output-list footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.cognition-output-list footer button {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #eef0f8;
+  color: #626d87;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cognition-output-list footer button:last-child {
+  background: #f8eeee;
+  color: #a65b5b;
+}
+
+.cognition-output-empty {
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px dashed #d8dde8;
+  border-radius: 11px;
+  color: #858da0;
+  font-size: 12px;
+  text-align: center;
+}
 .cognition-feed {
   padding: 26px;
 }
@@ -580,6 +738,21 @@
   -webkit-line-clamp: 2;
 }
 
+.feed-copy p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 7px 0 0;
+  color: #60697b;
+  font-size: 12px;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.cognition-page--growth .cognition-feed-row {
+  min-height: 126px;
+}
+
 .feed-copy small {
   display: block;
   margin-top: 7px;
@@ -596,6 +769,392 @@
   color: #9b6729;
 }
 
+
+.cognition-control-panel {
+  padding: 14px 16px 12px;
+  border: 1px solid #dfe3ec;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 4px 16px rgba(31, 37, 58, .025);
+}
+
+.cognition-control-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.cognition-module-tabs {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 11px;
+  background: #f0f2f7;
+}
+
+.cognition-module-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 8px;
+  background: transparent;
+  color: #687187;
+  font-size: 12px;
+}
+
+.cognition-module-tabs button span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .75);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.cognition-module-tabs button strong { font-weight: 850; }
+
+.cognition-module-tabs button.active {
+  background: #fff;
+  color: #4f5cc1;
+  box-shadow: 0 2px 9px rgba(45, 54, 91, .1);
+}
+
+.cognition-page--growth .cognition-module-tabs button.active { color: #946126; }
+
+.cognition-current-board {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.cognition-current-board > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: #eef0fb;
+  color: #5663c5;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.cognition-page--growth .cognition-current-board > span {
+  background: #fbf0df;
+  color: #986329;
+}
+
+.cognition-current-board div { min-width: 0; }
+
+.cognition-current-board small {
+  display: block;
+  color: #9299aa;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.cognition-current-board strong {
+  display: inline;
+  color: #30384d;
+  font-size: 14px;
+}
+
+.cognition-current-board p {
+  display: inline;
+  margin: 0 0 0 8px;
+  overflow: hidden;
+  color: #7d8598;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cognition-category-strip {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+  padding-top: 11px;
+  overflow-x: auto;
+  border-top: 1px solid #edf0f5;
+  scrollbar-width: thin;
+}
+
+.cognition-category-strip button {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #f5f6f9;
+  color: #687187;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cognition-category-strip button span {
+  color: #5965c9;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cognition-category-strip button.active {
+  border-color: #aeb6ee;
+  background: #eceeff;
+  color: #4451b5;
+}
+
+.cognition-page--growth .cognition-category-strip button span { color: #966328; }
+
+.cognition-page--growth .cognition-category-strip button.active {
+  border-color: #d8b781;
+  background: #fff3df;
+  color: #86561f;
+}
+
+.cognition-feature-grid { align-items: start; }
+
+.cognition-feature-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: auto;
+}
+
+.cognition-feature-actions button {
+  align-self: auto;
+  margin-top: 0;
+}
+
+.cognition-feature-actions .knowledge-drawer-toggle {
+  padding: 7px 11px;
+  border: 1px solid #dfe3ec;
+  border-radius: 8px;
+  color: #687188;
+}
+
+.cognition-page--growth .cognition-feature-actions .knowledge-drawer-toggle {
+  border-color: #ead8bd;
+  color: #8d5b24;
+}
+
+.knowledge-drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  width: 100%;
+  opacity: 0;
+  transition: grid-template-rows .28s ease, opacity .22s ease, margin-top .28s ease;
+}
+
+.knowledge-drawer.open {
+  grid-template-rows: 1fr;
+  margin-top: 18px;
+  opacity: 1;
+}
+
+.knowledge-drawer > div { overflow: hidden; }
+
+.knowledge-drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  border: 1px solid #e6e9f0;
+  border-bottom: 0;
+  border-radius: 11px 11px 0 0;
+  background: rgba(247, 248, 252, .94);
+}
+
+.knowledge-drawer header strong {
+  color: #30384d;
+  font-size: 12px;
+}
+
+.knowledge-drawer header small {
+  color: #8a92a4;
+  font-size: 10px;
+}
+
+.knowledge-drawer-list {
+  overflow: hidden;
+  border: 1px solid #e6e9f0;
+  border-radius: 0 0 11px 11px;
+  background: rgba(255, 255, 255, .92);
+}
+
+.knowledge-drawer-list button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 34px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  margin: 0;
+  padding: 9px 12px;
+  border-top: 1px solid #edf0f4;
+  border-radius: 0;
+  color: #30384d;
+  text-align: left;
+}
+
+.knowledge-drawer-list button:first-child { border-top: 0; }
+.knowledge-drawer-list button:hover { background: #f8f9fd; }
+.cognition-page--growth .knowledge-drawer-list button:hover { background: #fff9ef; }
+
+.knowledge-drawer-list button > span {
+  color: #8991a4;
+  font: 800 10px/1 monospace;
+}
+
+.knowledge-drawer-list button div { min-width: 0; }
+
+.knowledge-drawer-list button strong {
+  display: block;
+  overflow: hidden;
+  color: #30384d;
+  font-size: 12px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.knowledge-drawer-list button small {
+  display: block;
+  margin-top: 4px;
+  color: #9097a8;
+  font-size: 9px;
+}
+
+.knowledge-drawer-list button b {
+  color: #6975c9;
+  font-size: 12px;
+}
+
+.cognition-page--growth .knowledge-drawer-list button b { color: #986329; }
+
+.cognition-relation {
+  margin-top: 15px;
+}
+
+.cognition-relation-trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid rgba(213, 219, 255, .24);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .08);
+  color: #f5f7ff;
+  text-align: left;
+}
+
+.cognition-relation-trigger > span {
+  color: #b9c1d8;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.cognition-relation-trigger strong {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cognition-relation-trigger b {
+  color: #cbd2ee;
+  font-size: 11px;
+}
+
+.cognition-relation-menu {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows .23s ease, opacity .18s ease;
+}
+
+.cognition-relation-menu.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.cognition-relation-menu > div {
+  display: grid;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.cognition-relation-menu button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .07);
+  color: #e8ebf6;
+  text-align: left;
+}
+
+.cognition-relation-menu button:first-child { margin-top: 5px; }
+.cognition-relation-menu button:hover,
+.cognition-relation-menu button.active { background: rgba(255, 255, 255, .16); }
+
+.cognition-relation-menu button span {
+  color: #b9c1d8;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.cognition-relation-menu button strong {
+  margin: 0;
+  overflow: hidden;
+  color: #f7f8ff;
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cognition-output-related {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  overflow: hidden;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: #eef0fa;
+  color: #5864bd;
+  font-size: 10px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cognition-page--growth .cognition-output-related {
+  background: #f8eddd;
+  color: #8f5e26;
+}
 @media (max-width: 1180px) {
   .board-nav {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -624,6 +1183,18 @@
 
   .cognition-feature-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cognition-output-list {
+    grid-template-columns: 1fr;
+  }
+
+  .cognition-current-board {
+    flex: 1;
+  }
+
+  .cognition-current-board p {
+    display: none;
   }
 }
 
@@ -676,6 +1247,38 @@
 
   .cognition-feed-head > span {
     text-align: left;
+  }
+
+  .cognition-output-head,
+  .cognition-question-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cognition-control-top {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cognition-module-tabs {
+    width: 100%;
+  }
+
+  .cognition-module-tabs button {
+    justify-content: center;
+  }
+
+  .cognition-feature-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .knowledge-drawer header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .cognition-feed-row {

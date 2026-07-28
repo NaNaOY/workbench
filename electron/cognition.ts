@@ -1,15 +1,7 @@
 import { net } from 'electron';
+import { getLearningContent, type LearningCategoryId } from './learning';
 
-export type CognitionCategoryId =
-  | 'digest'
-  | 'politics'
-  | 'thinking'
-  | 'psychology'
-  | 'law'
-  | 'economy'
-  | 'technology'
-  | 'medicine'
-  | 'energy';
+export type CognitionCategoryId = 'digest' | LearningCategoryId;
 
 export type CognitionMode = 'current' | 'growth';
 
@@ -25,11 +17,11 @@ const boards: CognitionBoard[] = [
     id: 'politics',
     label: '政治与格局',
     query: {
-      current: '(政策 发布 解读 OR 国家治理 OR 国际形势 外交) (site:www.gov.cn OR site:mfa.gov.cn OR site:npc.gov.cn OR site:news.cn OR site:qstheory.cn) when:30d',
+      current: '(中国 国内 政策 OR 社会治理 OR 时政热点 OR 外交 国际格局) (site:news.cn OR site:people.com.cn OR site:chinanews.com.cn OR site:cctv.com OR site:thepaper.cn OR site:www.gov.cn) when:7d',
       growth: '(政治学 OR 国家治理 OR 国际关系 OR 地缘政治 OR 制度分析 OR 公共政策 方法) (site:cssn.cn OR site:theory.people.com.cn OR site:edu.cn OR site:news.cn) when:3650d',
     },
     keywords: {
-      current: /政策|治理|外交|国际形势|国家战略|政治|国务院|改革|规划/,
+      current: /中国|国内|政策|治理|外交|国际|社会|政治|国务院|改革|民生|热点/,
       growth: /政治学|国家治理|国际关系|地缘政治|政治思维|制度|公共政策|治理|国家战略/,
     },
   },
@@ -37,11 +29,11 @@ const boards: CognitionBoard[] = [
     id: 'thinking',
     label: '思维与经典',
     query: {
-      current: '(战略思维 OR 系统思维 OR 辩证思维 OR 毛泽东选集 OR 资本论 OR 道德经 OR 资治通鉴 OR 史记) (site:qstheory.cn OR site:cssn.cn OR site:people.com.cn OR site:edu.cn) when:90d',
+      current: '(中国 社会观察 OR 文化热点 OR 教育趋势 OR 思维方式 OR 读书) (site:people.com.cn OR site:news.cn OR site:thepaper.cn OR site:gmw.cn OR site:cssn.cn OR site:chinanews.com.cn) when:14d',
       growth: '(系统思维 方法 OR 批判性思维 OR 战略思维 OR 毛泽东 思想 OR 资本论 解读 OR 道德经 解读 OR 资治通鉴 OR 史记) (site:cssn.cn OR site:people.com.cn OR site:qstheory.cn OR site:edu.cn) when:3650d',
     },
     keywords: {
-      current: /战略思维|系统思维|辩证思维|毛泽东|毛选|资本论|马克思|道德经|老子|资治通鉴|史记|司马迁/,
+      current: /中国|社会|文化|教育|阅读|读书|思想|思维|历史|经典|趋势|观察/,
       growth: /系统思维|批判性思维|决策|思维方法|毛泽东|毛选|资本论|马克思|道德经|老子|资治通鉴|史记|司马迁/,
     },
   },
@@ -49,7 +41,7 @@ const boards: CognitionBoard[] = [
     id: 'psychology',
     label: '心理与人际',
     query: {
-      current: '(心理学 研究 OR 社会心理 OR 人际关系 OR 情商 OR 心理边界) (site:psych.ac.cn OR site:edu.cn OR site:cas.cn) when:60d',
+      current: '(中国 心理健康 OR 社会心理 OR 职场关系 OR 青年心理 OR 人际关系) (site:psych.ac.cn OR site:people.com.cn OR site:thepaper.cn OR site:chinanews.com.cn OR site:gmw.cn) when:14d',
       growth: '(心理学 原理 OR 社会心理学 OR 沟通方法 OR 人际关系 OR 情绪管理 OR 心理边界) (site:psych.ac.cn OR site:edu.cn OR site:cas.cn OR site:thepaper.cn) when:3650d',
     },
     keywords: {
@@ -61,7 +53,7 @@ const boards: CognitionBoard[] = [
     id: 'law',
     label: '法律与民法',
     query: {
-      current: '(民法典 OR 民事纠纷 OR 法律常识 OR 典型案例) (site:court.gov.cn OR site:npc.gov.cn OR site:spp.gov.cn) when:60d',
+      current: '(中国 法治热点 OR 民法典 OR 权益保护 OR 典型案例 OR 社会案件) (site:court.gov.cn OR site:spp.gov.cn OR site:chinacourt.org OR site:news.cn OR site:people.com.cn OR site:thepaper.cn) when:14d',
       growth: '(民法典 解读 OR 合同 法律知识 OR 劳动争议 实务 OR 侵权责任 OR 证据规则) (site:court.gov.cn OR site:spp.gov.cn OR site:npc.gov.cn OR site:edu.cn OR site:chinacourt.org) when:3650d',
     },
     keywords: {
@@ -73,7 +65,7 @@ const boards: CognitionBoard[] = [
     id: 'economy',
     label: '经济与财富',
     query: {
-      current: '(经济形势 OR 货币政策 OR 资本流向 OR 股市 OR 基金 OR 投资者教育 OR 理财 OR 商业) (site:pbc.gov.cn OR site:stats.gov.cn OR site:csrc.gov.cn OR site:cssn.cn) when:30d',
+      current: '(中国 经济热点 OR 货币政策 OR 资本流向 OR A股 OR 基金 OR 消费 OR 就业) (site:yicai.com OR site:caixin.com OR site:stcn.com OR site:cls.cn OR site:people.com.cn OR site:news.cn OR site:pbc.gov.cn OR site:stats.gov.cn) when:7d',
       growth: '(经济学 原理 OR 资产配置 OR 基金 投资者教育 OR 商业模式 OR 现金流 OR 财务分析) (site:pbc.gov.cn OR site:csrc.gov.cn OR site:edu.cn OR site:cssn.cn OR site:cf40.org.cn OR site:caixin.com) when:3650d',
     },
     keywords: {
@@ -82,10 +74,22 @@ const boards: CognitionBoard[] = [
     },
   },
   {
+    id: 'business',
+    label: '商业思维',
+    query: {
+      current: '(中国 商业热点 OR 商业模式 OR 公司战略 OR 消费趋势 OR 创业 融资 OR 行业竞争) (site:36kr.com OR site:huxiu.com OR site:yicai.com OR site:caixin.com OR site:stcn.com OR site:cls.cn OR site:thepaper.cn) when:7d',
+      growth: '(商业模式 OR 单位经济 OR 现金流 OR 竞争战略 OR 用户价值)',
+    },
+    keywords: {
+      current: /商业|公司|企业|战略|消费|品牌|创业|融资|行业|市场|渠道|零售|利润|现金流/,
+      growth: /商业模式|单位经济|现金流|竞争战略|用户价值|护城河/,
+    },
+  },
+  {
     id: 'technology',
     label: '科技与 AI',
     query: {
-      current: '(科技成果 突破 OR 人工智能 最新进展 OR AI 大模型 OR 生成式人工智能) (site:most.gov.cn OR site:cas.cn OR site:edu.cn) when:30d',
+      current: '(中国 科技热点 OR 科技突破 OR 人工智能 最新进展 OR AI 大模型 OR 芯片 OR 机器人) (site:36kr.com OR site:jiqizhixin.com OR site:ithome.com OR site:infoq.cn OR site:cas.cn OR site:news.cn OR site:people.com.cn) when:7d',
       growth: '(人工智能 原理 OR 大模型 技术 OR 机器学习 方法 OR AI 工程实践 OR 科技产业 分析) (site:cas.cn OR site:edu.cn OR site:infoq.cn OR site:jiqizhixin.com OR site:oschina.net) when:3650d',
     },
     keywords: {
@@ -97,7 +101,7 @@ const boards: CognitionBoard[] = [
     id: 'medicine',
     label: '中医药与针灸',
     query: {
-      current: '(中医药 研究 OR 针灸 临床 OR 中医药 政策 OR 中药 科研) (site:satcm.gov.cn OR site:edu.cn OR site:cas.cn) when:90d',
+      current: '(中国 健康热点 OR 中医药 研究 OR 针灸 临床 OR 中药 科研 OR 医学进展) (site:kepuchina.cn OR site:people.com.cn OR site:news.cn OR site:chinanews.com.cn OR site:cas.cn OR site:satcm.gov.cn) when:14d',
       growth: '(中医 基础理论 OR 针灸 原理 OR 中药 学习 OR 中医 临床研究 方法 OR 循证医学) (site:satcm.gov.cn OR site:edu.cn OR site:cas.cn OR site:cnki.net) when:3650d',
     },
     keywords: {
@@ -109,7 +113,7 @@ const boards: CognitionBoard[] = [
     id: 'energy',
     label: '电力与能源',
     query: {
-      current: '(电网 OR 新型电力系统 OR 电力市场 OR 能源转型 OR 新能源) (site:nea.gov.cn OR site:sgcc.com.cn OR site:ndrc.gov.cn OR site:cas.cn) when:30d',
+      current: '(中国 电网 热点 OR 新型电力系统 OR 电力市场 OR 能源转型 OR 新能源 产业) (site:nea.gov.cn OR site:sgcc.com.cn OR site:ndrc.gov.cn OR site:bjx.com.cn OR site:cpnn.com.cn OR site:news.cn OR site:stcn.com) when:14d',
       growth: '(电力系统 原理 OR 电网 调度 OR 电力市场 机制 OR 储能 技术 OR 能源经济) (site:nea.gov.cn OR site:sgcc.com.cn OR site:edu.cn OR site:cas.cn OR site:cepc.com.cn) when:3650d',
     },
     keywords: {
@@ -265,7 +269,17 @@ async function fetchBoard(board: CognitionBoard, mode: CognitionMode) {
 export async function fetchCognitionContent(
   category: CognitionCategoryId = 'digest',
   mode: CognitionMode = 'current',
+  rotation = 0,
 ) {
+  if (mode === 'growth') {
+    return {
+      items: getLearningContent(category, new Date(), rotation),
+      fetchedAt: new Date().toISOString(),
+      category,
+      mode,
+    };
+  }
+
   const selectedBoards = category === 'digest' ? boards : boards.filter((board) => board.id === category);
   const results = await Promise.allSettled(selectedBoards.map((board) => fetchBoard(board, mode)));
   const perBoardLimit = category === 'digest' ? 2 : 12;

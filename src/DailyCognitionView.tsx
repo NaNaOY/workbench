@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './cognition.css';
 
-type CategoryId = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'technology' | 'medicine' | 'energy';
+type CategoryId = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'business' | 'technology' | 'medicine' | 'energy';
 type CognitionMode = 'current' | 'growth';
 
 interface Board {
@@ -33,6 +33,22 @@ interface CognitionResponse {
   mode: CognitionMode;
 }
 
+interface ReflectionEntry {
+  id: string;
+  mode: CognitionMode;
+  category: CategoryId;
+  categoryLabel: string;
+  question: string;
+  content: string;
+  createdAt: string;
+  relatedItemId?: string;
+  relatedTitle?: string;
+  relatedUrl?: string;
+  relatedSource?: string;
+}
+
+const reflectionHistoryKey = 'workbench:cognition-outputs:v1';
+
 interface DesktopCognitionApi {
   getDailyContent: (category?: CategoryId, mode?: CognitionMode, force?: boolean) => Promise<CognitionResponse>;
   openExternal: (url: string) => Promise<boolean>;
@@ -47,17 +63,17 @@ const modules: Array<{
 }> = [
   {
     id: 'current',
-    icon: '时',
-    label: '每日时政',
-    eyebrow: '看清今天',
-    description: '政策风向、国际格局、经济变化与科技动态',
+    icon: '讯',
+    label: '每日资讯',
+    eyebrow: '紧跟国内热点',
+    description: '国内热点、行业变化、经济脉搏与科技动态',
   },
   {
     id: 'growth',
-    icon: '知',
+    icon: '学',
     label: '认知提升',
-    eyebrow: '积累长期能力',
-    description: '原理、方法、行业知识与可迁移的专业技能',
+    eyebrow: '每天学会一件事',
+    description: '书籍思想、科普知识、实用模型与可迁移方法',
   },
 ];
 
@@ -66,11 +82,11 @@ const boards: Board[] = [
     id: 'digest',
     label: '综合总览',
     icon: '◈',
-    description: '跨领域选取今天值得关注的变化',
-    growthDescription: '跨领域选取值得长期学习的知识文章',
-    topics: ['政策', '思维', '法律', '经济', '科技', '健康'],
+    description: '跨领域选取国内今天真正值得关注的热点',
+    growthDescription: '跨领域学习一本书的思想、一个模型或一项科普知识',
+    topics: ['国内热点', '思维', '法律', '经济', '商业', '科技', '健康'],
     question: '今天哪条信息最可能改变你未来三个月的判断？为什么？',
-    growthQuestion: '这篇文章提供了什么可迁移的方法？你能把它用到哪个真实问题上？',
+    growthQuestion: '今天学到的概念能解释哪个真实问题？你准备怎样验证或应用它？',
   },
   {
     id: 'politics',
@@ -121,6 +137,16 @@ const boards: Board[] = [
     topics: ['经济学', '股市', '基金管理', '理财投资', '商业思维', '钱往哪流'],
     question: '资金正在从哪里流出、流向哪里？背后的收益与风险由谁承担？',
     growthQuestion: '这套分析如何区分收益来源、风险敞口、现金流和估值变化？',
+  },
+  {
+    id: 'business',
+    label: '商业思维',
+    icon: '商',
+    description: '追踪国内企业、行业竞争、消费变化与商业模式热点',
+    growthDescription: '学习用户价值、单位经济、现金流、定价与竞争优势',
+    topics: ['商业模式', '用户价值', '单位经济', '现金流', '定价', '护城河'],
+    question: '这条商业动态改变了谁的成本、渠道、用户价值或竞争位置？',
+    growthQuestion: '这个商业模型靠什么创造价值、获取收入并留下现金？',
   },
   {
     id: 'technology',
@@ -174,6 +200,16 @@ function readCache(key: string) {
   }
 }
 
+function readReflectionHistory() {
+  try {
+    const raw = localStorage.getItem(reflectionHistoryKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed as ReflectionEntry[] : [];
+  } catch {
+    return [];
+  }
+}
+
 function formatTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '最近更新';
@@ -197,7 +233,7 @@ export default function DailyCognitionView() {
   const [category, setCategory] = useState<CategoryId>('digest');
   const board = useMemo(() => boards.find((item) => item.id === category) ?? boards[0], [category]);
   const activeModule = modules.find((item) => item.id === mode) ?? modules[0];
-  const cacheKey = `workbench:cognition:${mode}:${category}:v3`;
+  const cacheKey = `workbench:cognition:${mode}:${category}:v5`;
   const initialCache = readCache(cacheKey);
   const [items, setItems] = useState<CognitionItem[]>(initialCache?.items ?? []);
   const [fetchedAt, setFetchedAt] = useState(initialCache?.fetchedAt ?? '');
@@ -205,6 +241,11 @@ export default function DailyCognitionView() {
   const [error, setError] = useState('');
   const reflectionKey = `workbench:cognition-reflection:${mode}:${category}:${dateKey()}`;
   const [reflection, setReflection] = useState(() => localStorage.getItem(reflectionKey) ?? '');
+  const [reflectionHistory, setReflectionHistory] = useState<ReflectionEntry[]>(readReflectionHistory);
+  const [feedback, setFeedback] = useState('');
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const [relatedItemId, setRelatedItemId] = useState('');
+  const [relatedPickerOpen, setRelatedPickerOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const desktop = api();
@@ -214,11 +255,13 @@ export default function DailyCognitionView() {
     }
     setLoading(true);
     setError('');
+    setFeedback('');
     try {
       const response = await desktop.getDailyContent(category, mode, true);
       localStorage.setItem(cacheKey, JSON.stringify({ ...response, date: dateKey() }));
       setItems(response.items);
       setFetchedAt(response.fetchedAt);
+      setFeedback(mode === 'growth' ? '已换一组知识卡' : '已获取本板块最新资讯');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '内容获取失败，请稍后重试。');
     } finally {
@@ -238,70 +281,128 @@ export default function DailyCognitionView() {
       void refresh();
     }
     setReflection(localStorage.getItem(reflectionKey) ?? '');
+    setFeedback('');
   }, [cacheKey, reflectionKey, refresh]);
+
+  useEffect(() => {
+    setRelatedItemId((current) => (
+      items.some((item) => item.id === current) ? current : items[0]?.id ?? ''
+    ));
+    setKnowledgeOpen(false);
+    setRelatedPickerOpen(false);
+  }, [items, mode, category]);
 
   const featured = items[0];
   const boardDescription = mode === 'growth' ? board.growthDescription : board.description;
   const thinkingQuestion = mode === 'growth' ? board.growthQuestion : board.question;
-  const feedLabel = mode === 'growth' ? '知识文章' : '可信时政';
+  const feedLabel = mode === 'growth' ? '知识卡片' : '国内热点';
+  const feedItems = items.slice(1, 6);
+  const relatedItems = items.slice(0, 6);
+  const relatedItem = relatedItems.find((item) => item.id === relatedItemId) ?? featured;
+
+  function saveReflection() {
+    const content = reflection.trim();
+    if (!content) {
+      setFeedback('请先写下你的判断或学习收获');
+      return;
+    }
+    const entry: ReflectionEntry = {
+      id: crypto.randomUUID(),
+      mode,
+      category,
+      categoryLabel: category === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : board.label,
+      question: thinkingQuestion,
+      content,
+      createdAt: new Date().toISOString(),
+      relatedItemId: relatedItem?.id,
+      relatedTitle: relatedItem?.title,
+      relatedUrl: relatedItem?.url,
+      relatedSource: relatedItem?.source,
+    };
+    const next = [entry, ...reflectionHistory].slice(0, 100);
+    localStorage.setItem(reflectionHistoryKey, JSON.stringify(next));
+    setReflectionHistory(next);
+    setFeedback('已保存到“我的认知产出”');
+  }
+
+  function deleteReflection(id: string) {
+    const next = reflectionHistory.filter((entry) => entry.id !== id);
+    localStorage.setItem(reflectionHistoryKey, JSON.stringify(next));
+    setReflectionHistory(next);
+    setFeedback('已删除这条认知产出');
+  }
+
+  async function copyReflection(entry: ReflectionEntry) {
+    try {
+      await navigator.clipboard.writeText(
+        `${entry.categoryLabel}\n关联内容：${entry.relatedTitle ?? '未关联'}\n\n${entry.question}\n\n${entry.content}`,
+      );
+      setFeedback('认知产出已复制');
+    } catch {
+      setFeedback('复制失败，请手动选择文字');
+    }
+  }
 
   return (
     <div className={`cognition-page cognition-page--${mode}`}>
       <section className="cognition-header">
         <div>
           <span className="cognition-kicker">每日认知 · {activeModule.label}</span>
-          <h2>{mode === 'growth' ? '把信息沉淀成知识、方法与专业能力。' : '理解今天正在发生什么，以及它为什么发生。'}</h2>
+          <h2>{mode === 'growth' ? '每天真正学会一个概念、模型或方法。' : '掌握国内正在发生的热点，以及它为何值得关注。'}</h2>
           <p>
             {mode === 'growth'
-              ? '优先选择课程讲义、研究文章、专业解读和行业方法论；适当扩大来源，但继续过滤鸡汤、情绪文案和空洞观点。'
-              : '聚焦政策、法律、经济、科技与国际变化；优先权威机构和可信来源，不追逐情绪。'}
+              ? '内容来自书籍核心思想与严谨科普，由工作台重组为“核心概念、适用场景、自测问题”；不混入公告、快讯和情绪文案。'
+              : '聚焦国内社会、法律、经济、商业、科技与行业变化；扩大可信媒体范围，优先时效、事实和现实影响。'}
           </p>
         </div>
         <div className="cognition-status">
           <span><i /> 每日 08:00 自动更新</span>
           <small>{fetchedAt ? `本板块更新于 ${formatTime(fetchedAt)}` : '等待首次更新'}</small>
-          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在获取…' : '更新本板块'}</button>
+          {feedback && <em>{feedback}</em>}
+          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在更新…' : mode === 'growth' ? '换一组知识卡' : '更新本板块'}</button>
         </div>
       </section>
 
-      <nav className="cognition-mode-switch" aria-label="每日认知内容模块">
-        {modules.map((item) => (
-          <button
-            type="button"
-            key={item.id}
-            className={mode === item.id ? 'active' : ''}
-            onClick={() => {
-              setMode(item.id);
-              setCategory('digest');
-            }}
-          >
-            <span>{item.icon}</span>
-            <div><small>{item.eyebrow}</small><strong>{item.label}</strong><p>{item.description}</p></div>
-            <b aria-hidden="true">进入 →</b>
-          </button>
-        ))}
-      </nav>
-
-      <nav className="board-nav" aria-label={`${activeModule.label}分类`}>
-        {boards.map((item) => (
-          <button type="button" key={item.id} className={category === item.id ? 'active' : ''} onClick={() => setCategory(item.id)}>
-            <span>{item.icon}</span>
-            <strong>{item.id === 'digest' ? (mode === 'growth' ? '知识总览' : '今日总览') : item.label}</strong>
-            <small>{mode === 'growth' ? item.growthDescription : item.description}</small>
-          </button>
-        ))}
-      </nav>
-
-      <section className="board-intro">
-        <div>
-          <span className="board-symbol">{board.icon}</span>
-          <div>
-            <span className="cognition-kicker">{activeModule.label} · 当前分类</span>
-            <h2>{board.id === 'digest' ? (mode === 'growth' ? '知识总览' : '今日总览') : board.label}</h2>
-            <p>{boardDescription}</p>
+      <section className="cognition-control-panel">
+        <div className="cognition-control-top">
+          <nav className="cognition-module-tabs" aria-label="每日认知内容模块">
+            {modules.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={mode === item.id ? 'active' : ''}
+                onClick={() => {
+                  setMode(item.id);
+                  setCategory('digest');
+                }}
+              >
+                <span>{item.icon}</span>
+                <strong>{item.label}</strong>
+              </button>
+            ))}
+          </nav>
+          <div className="cognition-current-board">
+            <span>{board.icon}</span>
+            <div>
+              <small>{activeModule.eyebrow} · 当前分类</small>
+              <strong>{board.id === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : board.label}</strong>
+              <p>{boardDescription}</p>
+            </div>
           </div>
         </div>
-        <div className="topic-cloud">{board.topics.map((topic) => <span key={topic}>{topic}</span>)}</div>
+        <nav className="cognition-category-strip" aria-label={`${activeModule.label}分类`}>
+          {boards.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={category === item.id ? 'active' : ''}
+              onClick={() => setCategory(item.id)}
+            >
+              <span>{item.icon}</span>
+              {item.id === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : item.label}
+            </button>
+          ))}
+        </nav>
       </section>
 
       {error && <div className="cognition-alert">联网更新暂时失败，已保留上一次内容。{error}</div>}
@@ -312,8 +413,32 @@ export default function DailyCognitionView() {
             <>
               <div className="article-meta"><span>{featured.categoryLabel}</span><small>{featured.source} · {formatArticleDate(featured.publishedAt)}</small></div>
               <h3>{featured.title}</h3>
-              <p>{featured.summary || '阅读原文，了解完整论据、背景、方法和适用边界。'}</p>
-              <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '开始深度阅读' : '阅读可信原文'} <span>↗</span></button>
+              <p>{featured.summary || '阅读完整内容，理解核心概念、适用场景与方法边界。'}</p>
+              <div className="cognition-feature-actions">
+                <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '查看知识来源' : '阅读资讯原文'} <span>↗</span></button>
+                <button
+                  type="button"
+                  className="knowledge-drawer-toggle"
+                  aria-expanded={knowledgeOpen}
+                  onClick={() => setKnowledgeOpen((open) => !open)}
+                >
+                  {knowledgeOpen ? '收起列表' : `展开 5 条${feedLabel}`} <span>{knowledgeOpen ? '↑' : '↓'}</span>
+                </button>
+              </div>
+              <div className={`knowledge-drawer ${knowledgeOpen ? 'open' : ''}`}>
+                <div>
+                  <header><strong>{feedLabel}</strong><small>点击条目阅读来源；写笔记时可在右侧选择关联</small></header>
+                  <div className="knowledge-drawer-list">
+                    {feedItems.map((item, index) => (
+                      <button type="button" key={item.id} onClick={() => openArticle(item.url)}>
+                        <span>{String(index + 1).padStart(2, '0')}</span>
+                        <div><strong>{item.title}</strong><small>{item.source} · {formatArticleDate(item.publishedAt)}</small></div>
+                        <b>↗</b>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </>
           ) : (
             <div className="cognition-loading">{loading ? `正在筛选${activeModule.label}内容…` : '当前分类暂时没有内容。'}</div>
@@ -322,6 +447,37 @@ export default function DailyCognitionView() {
 
         <article className="cognition-question">
           <span className="cognition-kicker">{mode === 'growth' ? '学习迁移卡' : '今日判断框架'}</span>
+          <div className="cognition-relation">
+            <button
+              type="button"
+              className="cognition-relation-trigger"
+              aria-expanded={relatedPickerOpen}
+              disabled={!relatedItem}
+              onClick={() => setRelatedPickerOpen((open) => !open)}
+            >
+              <span>关联知识条目</span>
+              <strong>{relatedItem?.title ?? '等待内容加载'}</strong>
+              <b>{relatedPickerOpen ? '↑' : '↓'}</b>
+            </button>
+            <div className={`cognition-relation-menu ${relatedPickerOpen ? 'open' : ''}`}>
+              <div>
+                {relatedItems.map((item, index) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={relatedItemId === item.id ? 'active' : ''}
+                    onClick={() => {
+                      setRelatedItemId(item.id);
+                      setRelatedPickerOpen(false);
+                    }}
+                  >
+                    <span>{index === 0 ? '重点' : String(index).padStart(2, '0')}</span>
+                    <strong>{item.title}</strong>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
           <strong>{thinkingQuestion}</strong>
           <textarea
             value={reflection}
@@ -331,26 +487,54 @@ export default function DailyCognitionView() {
             }}
             placeholder={mode === 'growth' ? '写下核心概念、适用场景和你准备练习的方法…' : '写下事实、判断依据和仍不确定的部分…'}
           />
-          <small>{mode === 'growth' ? '理解之后再复述，复述之后再应用。' : '只记录推理，不要求积极，也不制造焦虑。'}</small>
+          <div className="cognition-question-actions">
+            <small>{mode === 'growth' ? '草稿会自动保留；点击保存后形成一张长期认知卡。' : '草稿会自动保留；点击保存后进入认知产出。'}</small>
+            <button type="button" onClick={saveReflection} disabled={!reflection.trim()}>
+              {mode === 'growth' ? '保存学习卡' : '保存判断记录'}
+            </button>
+          </div>
         </article>
       </section>
 
-      <section className="cognition-feed">
-        <div className="cognition-feed-head">
-          <div><span className="cognition-kicker">{feedLabel}</span><h2>{board.id === 'digest' ? activeModule.label : board.label} · {mode === 'growth' ? '知识阅读' : '今日阅读'}</h2></div>
-          <span>{mode === 'growth' ? '专业来源 · 内容性优先 · 去空洞观点' : '权威来源 · 时效性优先 · 去情绪化标题'}</span>
+      <section className="cognition-output">
+        <div className="cognition-output-head">
+          <div>
+            <span className="cognition-kicker">我的认知产出</span>
+            <h2>把每天的思考沉淀成自己的知识库</h2>
+          </div>
+          <span>本地保存 {reflectionHistory.length} 条 · 最多保留 100 条</span>
         </div>
-        <div className="cognition-feed-list">
-          {items.slice(1).map((item, index) => (
-            <button type="button" key={item.id} className="cognition-feed-row" onClick={() => openArticle(item.url)}>
-              <span className="feed-rank">{String(index + 2).padStart(2, '0')}</span>
-              <span className="feed-category">{item.categoryLabel}</span>
-              <span className="feed-copy"><strong>{item.title}</strong><small>{item.source} · {formatArticleDate(item.publishedAt)}</small></span>
-              <span className="feed-open">↗</span>
-            </button>
-          ))}
-        </div>
+        {reflectionHistory.length ? (
+          <div className="cognition-output-list">
+            {reflectionHistory.slice(0, 6).map((entry) => (
+              <article key={entry.id}>
+                <div>
+                  <span>{entry.mode === 'growth' ? '学习卡' : '判断记录'} · {entry.categoryLabel}</span>
+                  <small>{formatTime(entry.createdAt)}</small>
+                </div>
+                <strong>{entry.question}</strong>
+                {entry.relatedTitle && (
+                  <button
+                    type="button"
+                    className="cognition-output-related"
+                    onClick={() => entry.relatedUrl && openArticle(entry.relatedUrl)}
+                  >
+                    关联：{entry.relatedTitle} {entry.relatedSource ? `· ${entry.relatedSource}` : ''}
+                  </button>
+                )}
+                <p>{entry.content}</p>
+                <footer>
+                  <button type="button" onClick={() => void copyReflection(entry)}>复制</button>
+                  <button type="button" onClick={() => deleteReflection(entry.id)}>删除</button>
+                </footer>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="cognition-output-empty">填写上方判断框架或学习迁移卡，然后点击保存；你的第一条认知产出会出现在这里。</div>
+        )}
       </section>
+
     </div>
   );
 }
