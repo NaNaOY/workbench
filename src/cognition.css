@@ -1,0 +1,688 @@
+.cognition-page {
+  display: grid;
+  gap: 24px;
+  max-width: 1480px;
+  margin: 0 auto;
+  color: #30384d;
+}
+
+.cognition-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 34px;
+  padding: 32px 34px;
+  border: 1px solid #dfe3ef;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(113, 126, 226, .18), transparent 34%),
+    linear-gradient(135deg, #fff, #f5f6ff);
+}
+
+.cognition-page--growth .cognition-header {
+  background:
+    radial-gradient(circle at 90% 15%, rgba(201, 145, 75, .18), transparent 34%),
+    linear-gradient(135deg, #fff, #fff9ee);
+}
+
+.cognition-kicker {
+  color: #5864c3;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 1.25px;
+}
+
+.cognition-page--growth .cognition-kicker {
+  color: #9b6729;
+}
+
+.cognition-header h2 {
+  margin: 10px 0 0;
+  color: #222b40;
+  font-size: 30px;
+  line-height: 1.35;
+  letter-spacing: -.7px;
+}
+
+.cognition-header p {
+  max-width: 850px;
+  margin: 13px 0 0;
+  color: #687188;
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.cognition-status {
+  display: grid;
+  flex: 0 0 225px;
+  gap: 9px;
+  padding: 17px;
+  border: 1px solid rgba(101, 115, 208, .2);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.cognition-status > span {
+  color: #4d566e;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cognition-status i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #55b987;
+  box-shadow: 0 0 0 4px rgba(85, 185, 135, .12);
+}
+
+.cognition-status small {
+  color: #858da1;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.cognition-status button {
+  min-height: 40px;
+  margin-top: 3px;
+  border-radius: 9px;
+  background: #4f5bc8;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cognition-page--growth .cognition-status button {
+  background: #9c6a2f;
+}
+
+.cognition-status button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.cognition-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cognition-mode-switch button {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  min-height: 108px;
+  padding: 20px 22px;
+  border: 1px solid #dfe3ed;
+  border-radius: 16px;
+  background: #fff;
+  color: #343c51;
+  text-align: left;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.cognition-mode-switch button:hover {
+  transform: translateY(-2px);
+  border-color: #c4cadc;
+  box-shadow: 0 10px 26px rgba(39, 47, 76, .08);
+}
+
+.cognition-mode-switch button.active {
+  border-color: #9ea8ea;
+  background: linear-gradient(135deg, #f7f8ff, #eceeff);
+  box-shadow: 0 10px 28px rgba(73, 85, 175, .11);
+}
+
+.cognition-mode-switch button:nth-child(2).active {
+  border-color: #d8b47e;
+  background: linear-gradient(135deg, #fffdf8, #fff2dc);
+  box-shadow: 0 10px 28px rgba(139, 91, 35, .1);
+}
+
+.cognition-mode-switch button > span {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 14px;
+  background: #edf0fb;
+  color: #5260c3;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.cognition-mode-switch button:nth-child(2) > span {
+  background: #fbf0df;
+  color: #9b6729;
+}
+
+.cognition-mode-switch small {
+  display: block;
+  color: #838ba0;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cognition-mode-switch strong {
+  display: block;
+  margin-top: 3px;
+  color: #273047;
+  font-size: 19px;
+}
+
+.cognition-mode-switch p {
+  margin: 5px 0 0;
+  color: #717a8f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cognition-mode-switch b {
+  color: #6b75c8;
+  font-size: 12px;
+}
+
+.cognition-mode-switch button:nth-child(2) b {
+  color: #9b6729;
+}
+
+.board-nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.board-nav button {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr);
+  align-items: center;
+  min-height: 88px;
+  padding: 14px;
+  border: 1px solid #e0e4ed;
+  border-radius: 13px;
+  background: #fff;
+  color: #343c50;
+  text-align: left;
+  transition: .18s ease;
+}
+
+.board-nav button:hover {
+  transform: translateY(-1px);
+  border-color: #c9cfdf;
+}
+
+.board-nav button.active {
+  border-color: #aeb6ee;
+  background: #eceeff;
+  box-shadow: 0 8px 20px rgba(70, 81, 170, .09);
+}
+
+.cognition-page--growth .board-nav button.active {
+  border-color: #d7b681;
+  background: #fff3df;
+  box-shadow: 0 8px 20px rgba(141, 92, 37, .08);
+}
+
+.board-nav button > span {
+  grid-row: span 2;
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 9px;
+  background: #eef0f7;
+  color: #5965c9;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.board-nav button.active > span {
+  background: #5965c9;
+  color: #fff;
+}
+
+.cognition-page--growth .board-nav button.active > span {
+  background: #9c6a2f;
+}
+
+.board-nav strong {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-nav small {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #838b9e;
+  font-size: 11px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.board-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 23px 26px;
+  border: 1px solid #e1e5ed;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.board-intro > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.board-symbol {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  place-items: center;
+  border-radius: 14px;
+  background: #252c43;
+  color: #dce1ff;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.cognition-page--growth .board-symbol {
+  background: #49351f;
+  color: #ffe5bd;
+}
+
+.board-intro h2 {
+  margin: 5px 0 0;
+  color: #273047;
+  font-size: 21px;
+}
+
+.board-intro p {
+  margin: 6px 0 0;
+  color: #747d92;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.topic-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.topic-cloud span {
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #f0f2f8;
+  color: #5d677e;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cognition-page--growth .topic-cloud span {
+  background: #faf0e1;
+  color: #7f5b2f;
+}
+
+.cognition-alert {
+  padding: 13px 16px;
+  border: 1px solid #eddfbb;
+  border-radius: 10px;
+  background: #fff9eb;
+  color: #786137;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.cognition-feature-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(330px, .65fr);
+  gap: 20px;
+}
+
+.cognition-feature,
+.cognition-question,
+.cognition-feed {
+  border: 1px solid #e1e5ed;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(31, 37, 58, .035);
+}
+
+.cognition-feature {
+  display: flex;
+  min-height: 320px;
+  flex-direction: column;
+  padding: 32px;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, .98), rgba(255, 252, 237, .9)),
+    url('/assets/notes-bloom.jpg') right center / cover;
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.article-meta span {
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: #e9ecff;
+  color: #5360bd;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.cognition-page--growth .article-meta span {
+  background: #f8ead5;
+  color: #8d5f28;
+}
+
+.article-meta small {
+  color: #818a9d;
+  font-size: 11px;
+}
+
+.cognition-feature h3 {
+  max-width: 820px;
+  margin: 25px 0 0;
+  color: #273047;
+  font-size: 25px;
+  line-height: 1.55;
+}
+
+.cognition-feature p {
+  display: -webkit-box;
+  max-width: 820px;
+  margin: 15px 0 24px;
+  overflow: hidden;
+  color: #626c82;
+  font-size: 14px;
+  line-height: 1.9;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.cognition-feature button {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 7px 0;
+  background: transparent;
+  color: #4f5cc5;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cognition-page--growth .cognition-feature button {
+  color: #93612a;
+}
+
+.cognition-loading {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  color: #7e879a;
+  font-size: 14px;
+}
+
+.cognition-question {
+  display: flex;
+  min-height: 320px;
+  flex-direction: column;
+  padding: 28px;
+  border-color: #303857;
+  background:
+    linear-gradient(145deg, rgba(15, 20, 40, .93), rgba(32, 41, 78, .9)),
+    url('/assets/focus-stars.jpg') center / cover;
+}
+
+.cognition-page--growth .cognition-question {
+  border-color: #4c3924;
+  background:
+    linear-gradient(145deg, rgba(45, 31, 17, .94), rgba(89, 62, 31, .9)),
+    url('/assets/focus-stars.jpg') center / cover;
+}
+
+.cognition-question .cognition-kicker,
+.cognition-page--growth .cognition-question .cognition-kicker {
+  color: #bdc5ff;
+}
+
+.cognition-page--growth .cognition-question .cognition-kicker {
+  color: #f2cc94;
+}
+
+.cognition-question strong {
+  margin-top: 17px;
+  color: #f5f7ff;
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+.cognition-question textarea {
+  flex: 1;
+  min-height: 96px;
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid rgba(207, 214, 255, .2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .09);
+  color: #f7f8ff;
+  font-size: 14px;
+  line-height: 1.75;
+  resize: none;
+}
+
+.cognition-question textarea::placeholder {
+  color: #b2b9ce;
+}
+
+.cognition-question small {
+  margin-top: 10px;
+  color: #b0b7cb;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.cognition-feed {
+  padding: 26px;
+}
+
+.cognition-feed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.cognition-feed-head h2 {
+  margin: 6px 0 0;
+  color: #273047;
+  font-size: 20px;
+}
+
+.cognition-feed-head > span {
+  color: #838b9e;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.cognition-feed-list {
+  display: grid;
+  margin-top: 18px;
+}
+
+.cognition-feed-row {
+  display: grid;
+  grid-template-columns: 46px 96px minmax(0, 1fr) 28px;
+  align-items: center;
+  min-height: 82px;
+  padding: 10px 4px;
+  border-top: 1px solid #e9edf3;
+  background: transparent;
+  color: #30384d;
+  text-align: left;
+}
+
+.cognition-feed-row:hover {
+  background: #fafbfe;
+}
+
+.cognition-page--growth .cognition-feed-row:hover {
+  background: #fffbf4;
+}
+
+.feed-rank {
+  color: #929aad;
+  font: 800 12px/1 monospace;
+}
+
+.feed-category {
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #eef0f7;
+  color: #606a81;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cognition-page--growth .feed-category {
+  background: #f8ead5;
+  color: #805a2c;
+}
+
+.feed-copy {
+  min-width: 0;
+}
+
+.feed-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #30384d;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.feed-copy small {
+  display: block;
+  margin-top: 7px;
+  color: #80899c;
+  font-size: 11px;
+}
+
+.feed-open {
+  color: #5965c9;
+  font-size: 17px;
+}
+
+.cognition-page--growth .feed-open {
+  color: #9b6729;
+}
+
+@media (max-width: 1180px) {
+  .board-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cognition-header,
+  .board-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cognition-status {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .cognition-mode-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .topic-cloud {
+    justify-content: flex-start;
+  }
+
+  .cognition-feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .cognition-page {
+    gap: 17px;
+  }
+
+  .board-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cognition-header {
+    padding: 23px;
+  }
+
+  .cognition-header h2 {
+    font-size: 24px;
+  }
+
+  .cognition-mode-switch button {
+    grid-template-columns: 46px minmax(0, 1fr);
+    padding: 17px;
+  }
+
+  .cognition-mode-switch button > span {
+    width: 46px;
+    height: 46px;
+  }
+
+  .cognition-mode-switch b {
+    display: none;
+  }
+
+  .cognition-feature {
+    padding: 24px;
+  }
+
+  .cognition-feature h3 {
+    font-size: 21px;
+  }
+
+  .cognition-feed {
+    padding: 20px;
+  }
+
+  .cognition-feed-head {
+    flex-direction: column;
+  }
+
+  .cognition-feed-head > span {
+    text-align: left;
+  }
+
+  .cognition-feed-row {
+    grid-template-columns: 36px minmax(0, 1fr) 22px;
+  }
+
+  .feed-category {
+    display: none;
+  }
+}

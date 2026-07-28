@@ -1,0 +1,689 @@
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { createId, loadWorkspace, saveWorkspace } from './data';
+import { Bookmark, Note, Priority, Task, TaskStatus, WorkspaceData } from './types';
+import { GitHubRankingView } from './KnowledgeViews';
+import DailyCognitionView from './DailyCognitionView';
+
+type View = 'dashboard' | 'growth' | 'github' | 'tasks' | 'notes' | 'focus' | 'bookmarks';
+
+const navItems: Array<{ id: View; label: string; icon: string }> = [
+  { id: 'growth', label: '每日认知', icon: '◇' },
+  { id: 'github', label: 'GitHub 干货榜', icon: '⌘' },
+  { id: 'dashboard', label: '工作总览', icon: '⌂' },
+  { id: 'tasks', label: '任务管理', icon: '☑' },
+  { id: 'notes', label: '灵感笔记', icon: '▤' },
+  { id: 'focus', label: '专注模式', icon: '◷' },
+  { id: 'bookmarks', label: '快捷入口', icon: '↗' },
+];
+
+const priorityText: Record<Priority, string> = {
+  high: '高优先级',
+  medium: '中优先级',
+  low: '低优先级',
+};
+
+const statusText: Record<TaskStatus, string> = {
+  todo: '待处理',
+  doing: '进行中',
+  done: '已完成',
+};
+
+const focusSeconds = 25 * 60;
+
+function isoToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(value: string) {
+  if (!value) return '未设日期';
+  const date = new Date(`${value}T12:00:00`);
+  return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' }).format(date);
+}
+
+function relativeTime(value: string) {
+  const diff = Date.now() - new Date(value).getTime();
+  const minutes = Math.max(0, Math.floor(diff / 60000));
+  if (minutes < 2) return '刚刚更新';
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric' }).format(new Date(value));
+}
+
+function formatTimer(seconds: number) {
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const secs = (seconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${secs}`;
+}
+
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 11) return '早上好';
+  if (hour < 18) return '下午好';
+  return '晚上好';
+}
+
+export default function App() {
+  const [workspace, setWorkspace] = useState<WorkspaceData>(() => loadWorkspace());
+  const [activeView, setActiveView] = useState<View>('dashboard');
+  const [showTaskComposer, setShowTaskComposer] = useState(false);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(() => loadWorkspace().notes[0]?.id ?? null);
+  const [taskDraft, setTaskDraft] = useState({ title: '', priority: 'medium' as Priority, project: '收件箱', due: isoToday() });
+  const [bookmarkDraft, setBookmarkDraft] = useState({ title: '', url: '', description: '' });
+  const [showBookmarkComposer, setShowBookmarkComposer] = useState(false);
+  const [toast, setToast] = useState('');
+  const [secondsLeft, setSecondsLeft] = useState(focusSeconds);
+  const [isFocusing, setIsFocusing] = useState(false);
+  const [focusTaskId, setFocusTaskId] = useState('');
+
+  useEffect(() => {
+    saveWorkspace(workspace);
+  }, [workspace]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        setShowTaskComposer(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!isFocusing) return;
+    const timer = window.setInterval(() => {
+      setSecondsLeft((current) => {
+        if (current <= 1) {
+          setIsFocusing(false);
+          setWorkspace((data) => ({
+            ...data,
+            focusMinutes: data.focusMinutes + 25,
+            focusSessions: data.focusSessions + 1,
+          }));
+          notify('一个专注时段已完成，做得漂亮。');
+          return focusSeconds;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isFocusing]);
+
+  const today = isoToday();
+  const activeTasks = workspace.tasks.filter((task) => task.status !== 'done');
+  const dueToday = activeTasks.filter((task) => task.due === today);
+  const overdue = activeTasks.filter((task) => task.due && task.due < today);
+  const doneTasks = workspace.tasks.filter((task) => task.status === 'done');
+  const completionRate = workspace.tasks.length ? Math.round((doneTasks.length / workspace.tasks.length) * 100) : 0;
+  const selectedNote = workspace.notes.find((note) => note.id === selectedNoteId) ?? workspace.notes[0] ?? null;
+  const focusTask = workspace.tasks.find((task) => task.id === focusTaskId);
+
+  const taskGroups = useMemo(
+    () => [
+      { status: 'todo' as TaskStatus, title: '待处理', hint: '下一步可推进的事项' },
+      { status: 'doing' as TaskStatus, title: '进行中', hint: '正在投入注意力的任务' },
+      { status: 'done' as TaskStatus, title: '已完成', hint: '已完成的成果' },
+    ],
+    [],
+  );
+
+  function notify(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2600);
+  }
+
+  function addTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = taskDraft.title.trim();
+    if (!title) return;
+    const task: Task = {
+      id: createId('task'),
+      title,
+      status: 'todo',
+      priority: taskDraft.priority,
+      project: taskDraft.project.trim() || '收件箱',
+      due: taskDraft.due,
+    };
+    setWorkspace((data) => ({ ...data, tasks: [task, ...data.tasks] }));
+    setTaskDraft({ title: '', priority: 'medium', project: '收件箱', due: today });
+    setShowTaskComposer(false);
+    setActiveView('tasks');
+    notify('任务已加入工作台。');
+  }
+
+  function updateTask(id: string, patch: Partial<Task>) {
+    setWorkspace((data) => ({
+      ...data,
+      tasks: data.tasks.map((task) => (task.id === id ? { ...task, ...patch } : task)),
+    }));
+  }
+
+  function deleteTask(id: string) {
+    setWorkspace((data) => ({ ...data, tasks: data.tasks.filter((task) => task.id !== id) }));
+    notify('任务已移除。');
+  }
+
+  function createNote() {
+    const note: Note = {
+      id: createId('note'),
+      title: '未命名笔记',
+      content: '',
+      updatedAt: new Date().toISOString(),
+      color: '#e8eeff',
+    };
+    setWorkspace((data) => ({ ...data, notes: [note, ...data.notes] }));
+    setSelectedNoteId(note.id);
+  }
+
+  function updateNote(id: string, patch: Partial<Note>) {
+    setWorkspace((data) => ({
+      ...data,
+      notes: data.notes.map((note) => (note.id === id ? { ...note, ...patch, updatedAt: new Date().toISOString() } : note)),
+    }));
+  }
+
+  function deleteNote(id: string) {
+    setWorkspace((data) => {
+      const notes = data.notes.filter((note) => note.id !== id);
+      setSelectedNoteId(notes[0]?.id ?? null);
+      return { ...data, notes };
+    });
+  }
+
+  function addBookmark(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = bookmarkDraft.title.trim();
+    const rawUrl = bookmarkDraft.url.trim();
+    if (!title || !rawUrl) return;
+    const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    const colors = ['#e7f6ed', '#fff0dd', '#e8eeff', '#f3ebff', '#e5f6f4'];
+    const bookmark: Bookmark = {
+      id: createId('link'),
+      title,
+      url,
+      description: bookmarkDraft.description.trim() || '快捷访问',
+      color: colors[workspace.bookmarks.length % colors.length],
+    };
+    setWorkspace((data) => ({ ...data, bookmarks: [...data.bookmarks, bookmark] }));
+    setBookmarkDraft({ title: '', url: '', description: '' });
+    setShowBookmarkComposer(false);
+    notify('快捷入口已添加。');
+  }
+
+  function openBookmark(url: string) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function renderView() {
+    switch (activeView) {
+      case 'growth':
+        return <DailyCognitionView />;
+      case 'github':
+        return <GitHubRankingView />;
+      case 'tasks':
+        return (
+          <TasksView
+            taskGroups={taskGroups}
+            tasks={workspace.tasks}
+            onUpdate={updateTask}
+            onDelete={deleteTask}
+            onAdd={() => setShowTaskComposer(true)}
+          />
+        );
+      case 'notes':
+        return (
+          <NotesView
+            notes={workspace.notes}
+            selectedNote={selectedNote}
+            selectedId={selectedNoteId}
+            onSelect={setSelectedNoteId}
+            onCreate={createNote}
+            onUpdate={updateNote}
+            onDelete={deleteNote}
+          />
+        );
+      case 'focus':
+        return (
+          <FocusView
+            secondsLeft={secondsLeft}
+            isFocusing={isFocusing}
+            focusTaskId={focusTaskId}
+            focusTask={focusTask}
+            tasks={activeTasks}
+            focusMinutes={workspace.focusMinutes}
+            focusSessions={workspace.focusSessions}
+            onFocusTask={setFocusTaskId}
+            onToggle={() => setIsFocusing((running) => !running)}
+            onReset={() => {
+              setIsFocusing(false);
+              setSecondsLeft(focusSeconds);
+            }}
+          />
+        );
+      case 'bookmarks':
+        return (
+          <BookmarksView
+            bookmarks={workspace.bookmarks}
+            showComposer={showBookmarkComposer}
+            draft={bookmarkDraft}
+            onShowComposer={() => setShowBookmarkComposer(true)}
+            onHideComposer={() => setShowBookmarkComposer(false)}
+            onDraftChange={setBookmarkDraft}
+            onAdd={addBookmark}
+            onOpen={openBookmark}
+            onDelete={(id) => setWorkspace((data) => ({ ...data, bookmarks: data.bookmarks.filter((link) => link.id !== id) }))}
+          />
+        );
+      case 'dashboard':
+      default:
+        return (
+          <DashboardView
+            tasks={workspace.tasks}
+            notes={workspace.notes}
+            focusMinutes={workspace.focusMinutes}
+            completionRate={completionRate}
+            dueToday={dueToday}
+            overdue={overdue}
+            onTaskDone={(id) => updateTask(id, { status: 'done' })}
+            onOpenTasks={() => setActiveView('tasks')}
+            onOpenNotes={() => setActiveView('notes')}
+            onStartFocus={() => setActiveView('focus')}
+          />
+        );
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark"><img src="/assets/workbench-icon.png" alt="WorkBench" /></div>
+          <div>
+            <strong>WorkBench</strong>
+            <span>个人工作台</span>
+          </div>
+        </div>
+
+        <nav className="nav-list" aria-label="主要导航">
+          {navItems.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={`nav-item ${activeView === item.id ? 'active' : ''}`}
+              onClick={() => setActiveView(item.id)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="local-status"><span /> 本地优先 · 已保存</div>
+          <p>所有数据暂存于本机浏览器存储。</p>
+        </div>
+      </aside>
+
+      <section className="workspace">
+        <header className="topbar">
+          <div>
+            <div className="eyebrow">{new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())}</div>
+            <h1>{activeView === 'dashboard' ? `${greeting()}，今天想完成什么？` : navItems.find((item) => item.id === activeView)?.label}</h1>
+          </div>
+          <div className="topbar-actions">
+            <div className="profile-chip" title="我的工作台">
+              <img src="/assets/cozy-duck.jpg" alt="我的头像" />
+              <span><strong>我的空间</strong><small>本地工作台</small></span>
+            </div>
+            <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建任务</span></div>
+            <button type="button" className="primary-button" onClick={() => setShowTaskComposer(true)}>
+              <span>＋</span> 新建任务
+            </button>
+          </div>
+        </header>
+
+        <main className="content">{renderView()}</main>
+      </section>
+
+      {showTaskComposer && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowTaskComposer(false)}>
+          <form className="task-composer" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="composer-heading">
+              <div>
+                <span className="eyebrow">快速收集</span>
+                <h2>添加一件要事</h2>
+              </div>
+              <button type="button" className="icon-button" aria-label="关闭" onClick={() => setShowTaskComposer(false)}>×</button>
+            </div>
+            <label className="field full-field">
+              <span>任务内容</span>
+              <input autoFocus value={taskDraft.title} onChange={(event) => setTaskDraft({ ...taskDraft, title: event.target.value })} placeholder="例如：整理客户反馈并确定下一步" />
+            </label>
+            <div className="form-grid">
+              <label className="field">
+                <span>优先级</span>
+                <AppSelect ariaLabel="选择任务优先级" value={taskDraft.priority} options={[{ value: 'high', label: '高优先级' }, { value: 'medium', label: '中优先级' }, { value: 'low', label: '低优先级' }]} onChange={(value) => setTaskDraft({ ...taskDraft, priority: value as Priority })} />
+              </label>
+              <label className="field">
+                <span>截止日期</span>
+                <input type="date" value={taskDraft.due} onChange={(event) => setTaskDraft({ ...taskDraft, due: event.target.value })} />
+              </label>
+            </div>
+            <label className="field full-field">
+              <span>项目 / 场景</span>
+              <input value={taskDraft.project} onChange={(event) => setTaskDraft({ ...taskDraft, project: event.target.value })} placeholder="收件箱" />
+            </label>
+            <div className="composer-actions">
+              <button type="button" className="text-button" onClick={() => setShowTaskComposer(false)}>取消</button>
+              <button type="submit" className="primary-button">加入任务清单</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {toast && <div className="toast">✓ {toast}</div>}
+    </div>
+  );
+}
+
+function DashboardView({
+  tasks,
+  notes,
+  focusMinutes,
+  completionRate,
+  dueToday,
+  overdue,
+  onTaskDone,
+  onOpenTasks,
+  onOpenNotes,
+  onStartFocus,
+}: {
+  tasks: Task[];
+  notes: Note[];
+  focusMinutes: number;
+  completionRate: number;
+  dueToday: Task[];
+  overdue: Task[];
+  onTaskDone: (id: string) => void;
+  onOpenTasks: () => void;
+  onOpenNotes: () => void;
+  onStartFocus: () => void;
+}) {
+  const doneCount = tasks.filter((task) => task.status === 'done').length;
+  const minutesLabel = focusMinutes >= 60 ? `${Math.floor(focusMinutes / 60)}h ${focusMinutes % 60}m` : `${focusMinutes}m`;
+  const visibleTasks = [...overdue, ...dueToday.filter((task) => !overdue.some((late) => late.id === task.id))].slice(0, 4);
+
+  return (
+    <div className="dashboard-stack">
+      <section className="metrics-grid">
+        <MetricCard icon="☑" tone="lavender" label="今日待办" value={String(dueToday.length)} detail={dueToday.length ? '件任务需要推进' : '今天的清单很轻盈'} action="查看清单" onClick={onOpenTasks} />
+        <MetricCard icon="◉" tone="mint" label="完成进度" value={`${completionRate}%`} detail={`${doneCount} / ${tasks.length} 项任务已完成`} action="任务管理" onClick={onOpenTasks} />
+        <MetricCard icon="◷" tone="peach" label="专注时间" value={minutesLabel} detail="今日累计深度工作" action="开始专注" onClick={onStartFocus} />
+        <MetricCard icon="✦" tone="blue" label="灵感笔记" value={String(notes.length)} detail="随时记录，不让想法溜走" action="打开笔记" onClick={onOpenNotes} />
+      </section>
+
+      <section className="dashboard-grid">
+        <div className="panel task-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">TODAY'S FOCUS</span>
+              <h2>今天的优先事项</h2>
+            </div>
+            <button type="button" className="text-button" onClick={onOpenTasks}>查看全部 →</button>
+          </div>
+          {visibleTasks.length ? (
+            <div className="today-list">
+              {visibleTasks.map((task) => (
+                <div className="today-task" key={task.id}>
+                  <button type="button" className="check-button" aria-label={`完成 ${task.title}`} onClick={() => onTaskDone(task.id)} />
+                  <div className="today-task-body">
+                    <strong>{task.title}</strong>
+                    <span>{task.project} · {task.due < isoToday() ? '已逾期' : formatDate(task.due)}</span>
+                  </div>
+                  <PriorityPill priority={task.priority} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState icon="☀" title="今天没有待办" description="给自己留一点从容，或添加一件真正重要的事。" />
+          )}
+        </div>
+
+        <div className="panel rhythm-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">WEEKLY RHYTHM</span>
+              <h2>保持你的节奏</h2>
+            </div>
+            <span className="tiny-badge">本周</span>
+          </div>
+          <div className="rhythm-copy"><strong>别把一天排满。</strong><span>留出一段连续、不被打扰的时间，让重要的事情自然向前。</span></div>
+          <div className="mini-bars" aria-label="本周专注趋势">
+            {[35, 54, 41, 78, 64, 48, 70].map((height, index) => <span key={index} style={{ height: `${height}%` }} className={index === 4 ? 'today-bar' : ''} />)}
+          </div>
+          <div className="days-row"><span>一</span><span>二</span><span>三</span><span>四</span><span className="today-day">五</span><span>六</span><span>日</span></div>
+        </div>
+      </section>
+
+      <section className="lower-grid">
+        <div className="panel notes-preview">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">RECENT NOTES</span>
+              <h2>最近记录</h2>
+            </div>
+            <button type="button" className="text-button" onClick={onOpenNotes}>全部笔记 →</button>
+          </div>
+          <div className="note-preview-grid">
+            {notes.slice(0, 3).map((note) => (
+              <button type="button" onClick={onOpenNotes} className="note-card" key={note.id} style={{ background: note.color }}>
+                <strong>{note.title}</strong>
+                <span>{note.content || '点击开始记录…'}</span>
+                <small>{relativeTime(note.updatedAt)}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel quick-panel">
+          <img className="quick-brand-orbit" src="/assets/brand-orbit.jpg" alt="" aria-hidden="true" />
+          <span className="eyebrow">QUICK START</span>
+          <h2>给现在一个方向</h2>
+          <p>把注意力交给最重要的下一步，而不是更多的通知。</p>
+          <button type="button" className="dark-button" onClick={onStartFocus}>进入 25 分钟专注 <span>→</span></button>
+          <div className="quick-foot"><span className="pulse-dot" /> 已开启本地自动保存</div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MetricCard({ icon, tone, label, value, detail, action, onClick }: { icon: string; tone: string; label: string; value: string; detail: string; action: string; onClick: () => void }) {
+  return (
+    <button type="button" className="metric-card" onClick={onClick}>
+      <span className={`metric-icon ${tone}`}>{icon}</span>
+      <span className="metric-label">{label}</span>
+      <strong>{value}</strong>
+      <span className="metric-detail">{detail}</span>
+      <span className="metric-action">{action} <b>→</b></span>
+    </button>
+  );
+}
+
+function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { taskGroups: Array<{ status: TaskStatus; title: string; hint: string }>; tasks: Task[]; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void; onAdd: () => void }) {
+  const [filter, setFilter] = useState<'all' | Priority>('all');
+  const displayed = filter === 'all' ? tasks : tasks.filter((task) => task.priority === filter);
+  return (
+    <div className="view-stack">
+      <div className="view-toolbar">
+        <div className="filter-tabs">
+          {([['all', '全部'], ['high', '高优先级'], ['medium', '中优先级'], ['low', '低优先级']] as const).map(([value, label]) => (
+            <button type="button" key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>
+          ))}
+        </div>
+        <button type="button" className="secondary-button" onClick={onAdd}>＋ 添加任务</button>
+      </div>
+      <div className="task-board">
+        {taskGroups.map((group) => {
+          const groupTasks = displayed.filter((task) => task.status === group.status);
+          return (
+            <section className="task-column" key={group.status}>
+              <div className="column-heading">
+                <div><h2>{group.title}<span>{groupTasks.length}</span></h2><p>{group.hint}</p></div>
+                <span className={`column-dot ${group.status}`} />
+              </div>
+              <div className="task-stack">
+                {groupTasks.map((task) => <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDelete={onDelete} />)}
+                {groupTasks.length === 0 && <div className="column-empty">这里还没有任务</div>}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TaskCard({ task, onUpdate, onDelete }: { task: Task; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void }) {
+  return (
+    <article className={`task-card ${task.status === 'done' ? 'completed' : ''}`}>
+      <div className="task-card-top">
+        <PriorityPill priority={task.priority} />
+        <button type="button" className="delete-button" aria-label={`删除 ${task.title}`} onClick={() => onDelete(task.id)}>×</button>
+      </div>
+      <strong>{task.title}</strong>
+      <span className="task-project">{task.project}</span>
+      <div className="task-card-bottom">
+        <span className="due-date">◷ {formatDate(task.due)}</span>
+        <select aria-label={`更改 ${task.title} 状态`} value={task.status} onChange={(event) => onUpdate(task.id, { status: event.target.value as TaskStatus })}>
+          <option value="todo">待处理</option>
+          <option value="doing">进行中</option>
+          <option value="done">已完成</option>
+        </select>
+      </div>
+    </article>
+  );
+}
+
+function PriorityPill({ priority }: { priority: Priority }) {
+  return <span className={`priority-pill ${priority}`}><i />{priorityText[priority]}</span>;
+}
+
+function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate, onUpdate, onDelete }: { notes: Note[]; selectedNote: Note | null; selectedId: string | null; onSelect: (id: string) => void; onCreate: () => void; onUpdate: (id: string, patch: Partial<Note>) => void; onDelete: (id: string) => void }) {
+  return (
+    <div className="notes-layout">
+      <aside className="notes-list-panel">
+        <div className="notes-list-head"><div><span className="eyebrow">ALL NOTES</span><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate}>＋</button></div>
+        <div className="notes-list">
+          {notes.map((note) => (
+            <button type="button" key={note.id} className={`note-list-item ${selectedId === note.id ? 'selected' : ''}`} onClick={() => onSelect(note.id)}>
+              <span style={{ background: note.color }} />
+              <div><strong>{note.title || '未命名笔记'}</strong><small>{relativeTime(note.updatedAt)}</small></div>
+            </button>
+          ))}
+        </div>
+      </aside>
+      <section className="note-editor-panel">
+        {selectedNote ? (
+          <>
+            <div className="note-editor-top"><span className="saved-indicator"><i /> 自动保存中</span><button type="button" className="text-button danger" onClick={() => onDelete(selectedNote.id)}>删除笔记</button></div>
+            <input className="note-title-input" value={selectedNote.title} onChange={(event) => onUpdate(selectedNote.id, { title: event.target.value })} placeholder="笔记标题" />
+            <div className="note-meta">最后更新于 {relativeTime(selectedNote.updatedAt)}</div>
+            <textarea className="note-editor" value={selectedNote.content} onChange={(event) => onUpdate(selectedNote.id, { content: event.target.value })} placeholder="从一个想法开始…\n\n支持用空行整理你的段落。" />
+            <div className="editor-tip">⌘ / Ctrl + N 可从任何页面快速添加任务</div>
+          </>
+        ) : (
+          <EmptyState icon="✦" title="还没有笔记" description="记录正在酝酿的想法，未来的你会感谢现在的自己。" action="新建笔记" onAction={onCreate} />
+        )}
+      </section>
+    </div>
+  );
+}
+
+interface AppSelectOption {
+  value: string;
+  label: string;
+}
+
+function AppSelect({ value, options, onChange, ariaLabel }: { value: string; options: AppSelectOption[]; onChange: (value: string) => void; ariaLabel: string }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value) ?? options[0];
+  return (
+    <div className={`app-select ${open ? 'is-open' : ''}`} onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+    }}>
+      <button type="button" className="app-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        <span>{selected?.label}</span><b aria-hidden="true">⌄</b>
+      </button>
+      {open && (
+        <div className="app-select-menu" role="listbox" aria-label={ariaLabel}>
+          {options.map((option) => (
+            <button type="button" role="option" aria-selected={option.value === value} key={option.value} className={option.value === value ? 'selected' : ''} onClick={() => { onChange(option.value); setOpen(false); }}>
+              <span>{option.label}</span>{option.value === value && <b aria-hidden="true">✓</b>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, focusMinutes, focusSessions, onFocusTask, onToggle, onReset }: { secondsLeft: number; isFocusing: boolean; focusTaskId: string; focusTask?: Task; tasks: Task[]; focusMinutes: number; focusSessions: number; onFocusTask: (id: string) => void; onToggle: () => void; onReset: () => void }) {
+  const progress = ((focusSeconds - secondsLeft) / focusSeconds) * 100;
+  return (
+    <div className="focus-layout">
+      <section className="focus-hero">
+        <span className="eyebrow">DEEP WORK</span>
+        <h2>给重要的事，一段完整的时间。</h2>
+        <p>25 分钟内，暂时放下切换与干扰，只推进一件事。</p>
+        <label className="focus-task-select">
+          <span>本轮专注于</span>
+          <AppSelect ariaLabel="选择本轮专注任务" value={focusTaskId} options={[{ value: '', label: '选择一个任务（可选）' }, ...tasks.map((task) => ({ value: task.id, label: task.title }))]} onChange={onFocusTask} />
+        </label>
+        {focusTask && <div className="focus-task-chip">☑ {focusTask.title}</div>}
+      </section>
+      <section className="timer-panel">
+        <div className="timer-ring" style={{ '--progress': `${progress * 3.6}deg` } as React.CSSProperties}>
+          <div className="timer-core"><span>{isFocusing ? '正在专注' : '准备开始'}</span><strong>{formatTimer(secondsLeft)}</strong><small>番茄时段 · 25 分钟</small></div>
+        </div>
+        <div className="timer-actions"><button type="button" className="dark-button large" onClick={onToggle}>{isFocusing ? '暂停计时' : '开始专注'} <span>{isFocusing ? 'Ⅱ' : '→'}</span></button><button type="button" className="text-button" onClick={onReset}>重新开始</button></div>
+      </section>
+      <section className="focus-stats">
+        <div><span>今日累计</span><strong>{focusMinutes}<small> 分钟</small></strong></div>
+        <div><span>完成时段</span><strong>{focusSessions}<small> 个</small></strong></div>
+        <div><span>下一次休息</span><strong>{isFocusing ? '专注后' : '随时'}<small>{isFocusing ? ' · 5 分钟' : ' · 由你决定'}</small></strong></div>
+      </section>
+    </div>
+  );
+}
+
+function BookmarksView({ bookmarks, showComposer, draft, onShowComposer, onHideComposer, onDraftChange, onAdd, onOpen, onDelete }: { bookmarks: Bookmark[]; showComposer: boolean; draft: { title: string; url: string; description: string }; onShowComposer: () => void; onHideComposer: () => void; onDraftChange: (draft: { title: string; url: string; description: string }) => void; onAdd: (event: FormEvent<HTMLFormElement>) => void; onOpen: (url: string) => void; onDelete: (id: string) => void }) {
+  return (
+    <div className="view-stack">
+      <div className="bookmarks-intro"><div><span className="eyebrow">YOUR SHORTCUTS</span><h2>把常用工具放在顺手的位置</h2><p>网址、文档库和日常工具，一次点击就到。</p></div><button type="button" className="secondary-button" onClick={onShowComposer}>＋ 添加入口</button></div>
+      {showComposer && (
+        <form className="inline-composer" onSubmit={onAdd}>
+          <label className="field"><span>名称</span><input autoFocus value={draft.title} onChange={(event) => onDraftChange({ ...draft, title: event.target.value })} placeholder="例如：团队知识库" /></label>
+          <label className="field"><span>网址</span><input value={draft.url} onChange={(event) => onDraftChange({ ...draft, url: event.target.value })} placeholder="https://…" /></label>
+          <label className="field"><span>说明</span><input value={draft.description} onChange={(event) => onDraftChange({ ...draft, description: event.target.value })} placeholder="可选" /></label>
+          <div className="inline-actions"><button type="button" className="text-button" onClick={onHideComposer}>取消</button><button type="submit" className="primary-button">保存入口</button></div>
+        </form>
+      )}
+      <div className="bookmarks-grid">
+        {bookmarks.map((bookmark) => (
+          <article className="bookmark-card" key={bookmark.id} style={{ background: bookmark.color }}>
+            <div className="bookmark-card-top"><span className="bookmark-icon">↗</span><button type="button" className="delete-button" aria-label={`删除 ${bookmark.title}`} onClick={() => onDelete(bookmark.id)}>×</button></div>
+            <h3>{bookmark.title}</h3><p>{bookmark.description}</p>
+            <button type="button" className="open-link" onClick={() => onOpen(bookmark.url)}>打开链接 <span>→</span></button>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon, title, description, action, onAction }: { icon: string; title: string; description: string; action?: string; onAction?: () => void }) {
+  return <div className="empty-state"><span>{icon}</span><strong>{title}</strong><p>{description}</p>{action && <button type="button" className="secondary-button" onClick={onAction}>{action}</button>}</div>;
+}

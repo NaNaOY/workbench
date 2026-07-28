@@ -1,0 +1,123 @@
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #11172e;
+  box-shadow: 0 7px 18px rgba(84, 98, 211, .3);
+}
+
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-right: 2px;
+}
+
+.profile-chip img {
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 11px;
+  object-fit: cover;
+  box-shadow: 0 5px 13px rgba(32, 36, 53, .12);
+}
+
+.profile-chip > span {
+  display: grid;
+  gap: 1px;
+}
+
+.profile-chip strong {
+  color: #444c62;
+  font-size: 11px;
+}
+
+.profile-chip small {
+  color: #979daf;
+  font-size: 9px;
+}
+
+.quick-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-panel > :not(.quick-brand-orbit) {
+  position: relative;
+  z-index: 1;
+}
+
+.quick-brand-orbit {
+  position: absolute;
+  right: -28px;
+  bottom: -48px;
+  width: 185px;
+  border-radius: 50%;
+  opacity: .12;
+  mix-blend-mode: multiply;
+  transform: rotate(-9deg);
+}
+
+.notes-list-panel {
+  background:
+    linear-gradient(rgba(255, 253, 245, .9), rgba(247, 250, 246, .93)),
+    url('/assets/notes-bloom.jpg') center / cover;
+}
+
+.note-list-item:hover {
+  background: rgba(255, 255, 255, .7);
+}
+
+.note-list-item.selected {
+  background: rgba(233, 235, 255, .9);
+}
+
+.focus-hero {
+  border-color: #303957;
+  background:
+    linear-gradient(145deg, rgba(10, 15, 31, .86), rgba(23, 29, 58, .76)),
+    url('/assets/focus-stars.jpg') center / cover;
+}
+
+.focus-hero .eyebrow {
+  color: #aeb9ff;
+}
+
+.focus-hero h2 {
+  color: #f5f7ff;
+}
+
+.focus-hero p {
+  color: #b7bfd4;
+}
+
+.focus-hero .focus-task-select {
+  color: #c8cfe0;
+}
+
+.focus-hero .focus-task-select select {
+  border-color: rgba(196, 205, 238, .24);
+  background: rgba(255, 255, 255, .11);
+  color: #f0f3ff;
+}
+
+.focus-hero .focus-task-select option {
+  color: #30374b;
+}
+
+.focus-hero .focus-task-chip {
+  color: #cbd2ff;
+}
+
+@media (max-width: 850px) {
+  .profile-chip > span {
+    display: none;
+  }
+}
