@@ -230,9 +230,9 @@ export function registerContentIpc() {
     force = false,
   ) => {
     const selectedMode: CognitionMode = mode === 'growth' ? 'growth' : 'current';
-    const rotation = force && selectedMode === 'growth' ? ++growthRotation : 0;
-    if (category === 'digest') return force ? refreshDailyCache(selectedMode, false, rotation) : dailyCache[selectedMode] ?? refreshDailyCache(selectedMode, false);
-    return fetchCognitionContent(category, selectedMode, rotation);
+    const refreshKey = force ? (selectedMode === 'growth' ? ++growthRotation : Date.now()) : 0;
+    if (category === 'digest') return force ? refreshDailyCache(selectedMode, false, refreshKey) : dailyCache[selectedMode] ?? refreshDailyCache(selectedMode, false);
+    return fetchCognitionContent(category, selectedMode, refreshKey);
   });
   ipcMain.handle('content:get-github', (_event, request: GitHubRankingRequest) => fetchGitHubRanking(request));
   ipcMain.handle('content:open-external', async (_event, rawUrl: unknown) => {

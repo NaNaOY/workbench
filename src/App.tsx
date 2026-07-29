@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { createId, loadWorkspace, saveWorkspace } from './data';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { createId, loadWorkspace, localDateKey, saveWorkspace } from './data';
 import { Bookmark, Note, Priority, Task, TaskStatus, WorkspaceData } from './types';
 import { GitHubRankingView } from './KnowledgeViews';
 import DailyCognitionView from './DailyCognitionView';
@@ -28,10 +29,16 @@ const statusText: Record<TaskStatus, string> = {
   done: '已完成',
 };
 
+const taskStatusOptions: Array<{ value: TaskStatus; label: string }> = [
+  { value: 'todo', label: '待处理' },
+  { value: 'doing', label: '进行中' },
+  { value: 'done', label: '已完成' },
+];
+
 const focusSeconds = 25 * 60;
 
 function isoToday() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateKey();
 }
 
 function formatDate(value: string) {
@@ -63,6 +70,36 @@ function greeting() {
   return '晚上好';
 }
 
+function GlobalClickEffect() {
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const createEffect = (event: PointerEvent) => {
+      if (event.button !== 0 || !event.isPrimary || reducedMotion.matches) return;
+
+      const effect = document.createElement('span');
+      effect.className = 'global-click-effect';
+      effect.style.left = `${event.clientX}px`;
+      effect.style.top = `${event.clientY}px`;
+      effect.setAttribute('aria-hidden', 'true');
+
+      for (let index = 0; index < 6; index += 1) {
+        const spark = document.createElement('i');
+        spark.style.setProperty('--spark-angle', `${index * 60}deg`);
+        spark.style.setProperty('--spark-delay', `${index * 8}ms`);
+        effect.appendChild(spark);
+      }
+
+      document.body.appendChild(effect);
+      window.setTimeout(() => effect.remove(), 680);
+    };
+
+    window.addEventListener('pointerdown', createEffect, { passive: true });
+    return () => window.removeEventListener('pointerdown', createEffect);
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceData>(() => loadWorkspace());
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -81,6 +118,23 @@ export default function App() {
   }, [workspace]);
 
   useEffect(() => {
+    const resetFocusStatsAfterDayChange = () => {
+      const today = localDateKey();
+      setWorkspace((data) => data.focusDate === today
+        ? data
+        : {
+          ...data,
+          focusDate: today,
+          focusMinutes: 0,
+          focusSessions: 0,
+        });
+    };
+    resetFocusStatsAfterDayChange();
+    const timer = window.setInterval(resetFocusStatsAfterDayChange, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') {
         event.preventDefault();
@@ -97,11 +151,17 @@ export default function App() {
       setSecondsLeft((current) => {
         if (current <= 1) {
           setIsFocusing(false);
-          setWorkspace((data) => ({
-            ...data,
-            focusMinutes: data.focusMinutes + 25,
-            focusSessions: data.focusSessions + 1,
-          }));
+          setWorkspace((data) => {
+            const today = localDateKey();
+            const existingMinutes = data.focusDate === today ? data.focusMinutes : 0;
+            const existingSessions = data.focusDate === today ? data.focusSessions : 0;
+            return {
+              ...data,
+              focusDate: today,
+              focusMinutes: existingMinutes + 25,
+              focusSessions: existingSessions + 1,
+            };
+          });
           notify('一个专注时段已完成，做得漂亮。');
           return focusSeconds;
         }
@@ -297,6 +357,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <GlobalClickEffect />
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark"><img src="/assets/workbench-icon.png" alt="WorkBench" /></div>
@@ -326,7 +387,7 @@ export default function App() {
         </div>
       </aside>
 
-      <section className="workspace">
+      <section className={`workspace workspace--${activeView}`}>
         <header className="topbar">
           <div>
             <div className="eyebrow">{new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())}</div>
@@ -515,12 +576,20 @@ function MetricCard({ icon, tone, label, value, detail, action, onClick }: { ico
 function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { taskGroups: Array<{ status: TaskStatus; title: string; hint: string }>; tasks: Task[]; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void; onAdd: () => void }) {
   const [filter, setFilter] = useState<'all' | Priority>('all');
   const displayed = filter === 'all' ? tasks : tasks.filter((task) => task.priority === filter);
+  const filterCounts: Record<'all' | Priority, number> = {
+    all: tasks.length,
+    high: tasks.filter((task) => task.priority === 'high').length,
+    medium: tasks.filter((task) => task.priority === 'medium').length,
+    low: tasks.filter((task) => task.priority === 'low').length,
+  };
   return (
     <div className="view-stack">
       <div className="view-toolbar">
         <div className="filter-tabs">
           {([['all', '全部'], ['high', '高优先级'], ['medium', '中优先级'], ['low', '低优先级']] as const).map(([value, label]) => (
-            <button type="button" key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>
+            <button type="button" key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>
+              <span>{label}</span><b>{filterCounts[value]}</b>
+            </button>
           ))}
         </div>
         <button type="button" className="secondary-button" onClick={onAdd}>＋ 添加任务</button>
@@ -557,13 +626,112 @@ function TaskCard({ task, onUpdate, onDelete }: { task: Task; onUpdate: (id: str
       <span className="task-project">{task.project}</span>
       <div className="task-card-bottom">
         <span className="due-date">◷ {formatDate(task.due)}</span>
-        <select aria-label={`更改 ${task.title} 状态`} value={task.status} onChange={(event) => onUpdate(task.id, { status: event.target.value as TaskStatus })}>
-          <option value="todo">待处理</option>
-          <option value="doing">进行中</option>
-          <option value="done">已完成</option>
-        </select>
+        <TaskStatusSelect
+          value={task.status}
+          taskTitle={task.title}
+          onChange={(status) => onUpdate(task.id, { status })}
+        />
       </div>
     </article>
+  );
+}
+
+function TaskStatusSelect({ value, taskTitle, onChange }: { value: TaskStatus; taskTitle: string; onChange: (status: TaskStatus) => void }) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 132, placement: 'down' as 'up' | 'down' });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const measureMenu = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = 132;
+    const estimatedHeight = 134;
+    const gap = 8;
+    const opensDown = window.innerHeight - rect.bottom >= estimatedHeight + gap || rect.top < estimatedHeight + gap;
+    setPosition({
+      top: opensDown ? rect.bottom + gap : rect.top - estimatedHeight - gap,
+      left: Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width)),
+      width,
+      placement: opensDown ? 'down' : 'up',
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    measureMenu();
+
+    const closeFromOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!triggerRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
+    };
+    const closeFromKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('resize', measureMenu);
+    window.addEventListener('scroll', measureMenu, true);
+    window.addEventListener('pointerdown', closeFromOutside);
+    window.addEventListener('keydown', closeFromKeyboard);
+    return () => {
+      window.removeEventListener('resize', measureMenu);
+      window.removeEventListener('scroll', measureMenu, true);
+      window.removeEventListener('pointerdown', closeFromOutside);
+      window.removeEventListener('keydown', closeFromKeyboard);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`task-status-trigger status-${value} ${open ? 'is-open' : ''}`}
+        aria-label={`更改 ${taskTitle} 状态`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => {
+          if (!open) measureMenu();
+          setOpen((current) => !current);
+        }}
+      >
+        <i aria-hidden="true" />
+        <span>{statusText[value]}</span>
+        <b aria-hidden="true">⌄</b>
+      </button>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className={`task-status-menu placement-${position.placement}`}
+          role="listbox"
+          aria-label={`${taskTitle}的状态`}
+          style={{ top: position.top, left: position.left, width: position.width }}
+        >
+          {taskStatusOptions.map((option) => (
+            <button
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              key={option.value}
+              className={`task-status-option status-${option.value} ${option.value === value ? 'selected' : ''}`}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+            >
+              <i aria-hidden="true" />
+              <span>{option.label}</span>
+              <b aria-hidden="true">{option.value === value ? '✓' : ''}</b>
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -662,7 +830,13 @@ function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, foc
 function BookmarksView({ bookmarks, showComposer, draft, onShowComposer, onHideComposer, onDraftChange, onAdd, onOpen, onDelete }: { bookmarks: Bookmark[]; showComposer: boolean; draft: { title: string; url: string; description: string }; onShowComposer: () => void; onHideComposer: () => void; onDraftChange: (draft: { title: string; url: string; description: string }) => void; onAdd: (event: FormEvent<HTMLFormElement>) => void; onOpen: (url: string) => void; onDelete: (id: string) => void }) {
   return (
     <div className="view-stack">
-      <div className="bookmarks-intro"><div><span className="eyebrow">YOUR SHORTCUTS</span><h2>把常用工具放在顺手的位置</h2><p>网址、文档库和日常工具，一次点击就到。</p></div><button type="button" className="secondary-button" onClick={onShowComposer}>＋ 添加入口</button></div>
+      <div className="bookmarks-intro">
+        <div className="bookmarks-copy">
+          <h2>常用工具</h2>
+          <p>保存网站、文档库和日常工具，一次点击直达。</p>
+        </div>
+        <button type="button" className="secondary-button" onClick={onShowComposer}>＋ 添加入口</button>
+      </div>
       {showComposer && (
         <form className="inline-composer" onSubmit={onAdd}>
           <label className="field"><span>名称</span><input autoFocus value={draft.title} onChange={(event) => onDraftChange({ ...draft, title: event.target.value })} placeholder="例如：团队知识库" /></label>

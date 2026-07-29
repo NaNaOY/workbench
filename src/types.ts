@@ -30,6 +30,7 @@ export interface WorkspaceData {
   tasks: Task[];
   notes: Note[];
   bookmarks: Bookmark[];
+  focusDate: string;
   focusMinutes: number;
   focusSessions: number;
 }

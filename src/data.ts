@@ -2,10 +2,17 @@ import { Bookmark, Note, Task, WorkspaceData } from './types';
 
 export const STORAGE_KEY = 'workbench:data:v1';
 
+export function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const dayOffset = (offset: number) => {
   const date = new Date();
   date.setDate(date.getDate() + offset);
-  return date.toISOString().slice(0, 10);
+  return localDateKey(date);
 };
 
 export const seedWorkspace: WorkspaceData = {
@@ -36,8 +43,9 @@ export const seedWorkspace: WorkspaceData = {
     { id: 'link-2', title: 'Notion', url: 'https://www.notion.so', description: '项目资料与知识库', color: '#f3ebff' },
     { id: 'link-3', title: 'ChatGPT', url: 'https://chatgpt.com', description: '协作与灵感助手', color: '#e5f6f4' },
   ],
-  focusMinutes: 75,
-  focusSessions: 3,
+  focusDate: localDateKey(),
+  focusMinutes: 0,
+  focusSessions: 0,
 };
 
 export function loadWorkspace(): WorkspaceData {
@@ -46,12 +54,15 @@ export function loadWorkspace(): WorkspaceData {
     if (!saved) return seedWorkspace;
     const parsed = JSON.parse(saved) as Partial<WorkspaceData>;
     if (!Array.isArray(parsed.tasks) || !Array.isArray(parsed.notes) || !Array.isArray(parsed.bookmarks)) return seedWorkspace;
+    const today = localDateKey();
+    const hasTodayFocusStats = parsed.focusDate === today;
     return {
       tasks: parsed.tasks as Task[],
       notes: parsed.notes as Note[],
       bookmarks: parsed.bookmarks as Bookmark[],
-      focusMinutes: Number(parsed.focusMinutes) || 0,
-      focusSessions: Number(parsed.focusSessions) || 0,
+      focusDate: today,
+      focusMinutes: hasTodayFocusStats ? Number(parsed.focusMinutes) || 0 : 0,
+      focusSessions: hasTodayFocusStats ? Number(parsed.focusSessions) || 0 : 0,
     };
   } catch {
     return seedWorkspace;

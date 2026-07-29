@@ -2,124 +2,111 @@ import { net } from 'electron';
 import { getLearningContent, type LearningCategoryId } from './learning';
 
 export type CognitionCategoryId = 'digest' | LearningCategoryId;
-
 export type CognitionMode = 'current' | 'growth';
+
+interface DomesticFeed {
+  name: string;
+  url: string;
+}
 
 interface CognitionBoard {
   id: Exclude<CognitionCategoryId, 'digest'>;
   label: string;
-  query: Record<CognitionMode, string>;
-  keywords: Record<CognitionMode, RegExp>;
+  feeds: DomesticFeed[];
+  keywords: RegExp;
 }
+
+interface FeedItem {
+  id: string;
+  title: string;
+  url: string;
+  summary: string;
+  source: string;
+  publishedAt: string;
+}
+
+const feeds = {
+  xinhuaPolitics: { name: '新华网·时政', url: 'https://www.xinhuanet.com/politics/news_politics.xml' },
+  xinhuaWorld: { name: '新华网·国际', url: 'https://www.xinhuanet.com/world/news_world.xml' },
+  xinhuaTechnology: { name: '新华网·科技', url: 'https://www.xinhuanet.com/tech/news_tech.xml' },
+  xinhuaFinance: { name: '新华网·财经', url: 'https://www.xinhuanet.com/fortune/news_fortune.xml' },
+  xinhuaHealth: { name: '新华网·健康', url: 'https://www.xinhuanet.com/health/news_health.xml' },
+  xinhuaLaw: { name: '新华网·法治', url: 'https://www.xinhuanet.com/legal/news_legal.xml' },
+  peoplePolitics: { name: '人民网·时政', url: 'https://www.people.com.cn/rss/politics.xml' },
+  peopleSociety: { name: '人民网·社会', url: 'https://www.people.com.cn/rss/society.xml' },
+  peopleCulture: { name: '人民网·文化', url: 'https://www.people.com.cn/rss/culture.xml' },
+  peopleFinance: { name: '人民网·财经', url: 'https://www.people.com.cn/rss/finance.xml' },
+  peopleTechnology: { name: '人民网·科技', url: 'https://www.people.com.cn/rss/it.xml' },
+  peopleHealth: { name: '人民网·健康', url: 'https://www.people.com.cn/rss/health.xml' },
+  peopleLaw: { name: '人民网·法治', url: 'https://www.people.com.cn/rss/legal.xml' },
+  chinaNewsLatest: { name: '中国新闻网·即时', url: 'https://www.chinanews.com.cn/rss/scroll-news.xml' },
+  chinaNewsPolitics: { name: '中国新闻网·时政', url: 'https://www.chinanews.com.cn/rss/china.xml' },
+  chinaNewsWorld: { name: '中国新闻网·国际', url: 'https://www.chinanews.com.cn/rss/world.xml' },
+  chinaNewsSociety: { name: '中国新闻网·社会', url: 'https://www.chinanews.com.cn/rss/society.xml' },
+  chinaNewsFinance: { name: '中国新闻网·财经', url: 'https://www.chinanews.com.cn/rss/finance.xml' },
+  chinaNewsHealth: { name: '中国新闻网·健康', url: 'https://www.chinanews.com.cn/rss/jk.xml' },
+  chinaNewsLaw: { name: '中国新闻网·法治', url: 'https://www.chinanews.com.cn/rss/fz.xml' },
+  chinaNewsTheory: { name: '中国新闻网·理论', url: 'https://www.chinanews.com.cn/rss/theory.xml' },
+  chinaNewsCulture: { name: '中国新闻网·文化', url: 'https://www.chinanews.com.cn/rss/culture.xml' },
+  krGeneral: { name: '36氪·综合资讯', url: 'https://36kr.com/feed' },
+  krArticles: { name: '36氪·文章', url: 'https://36kr.com/feed-article' },
+  krNewsflash: { name: '36氪·快讯', url: 'https://36kr.com/feed-newsflash' },
+} satisfies Record<string, DomesticFeed>;
 
 const boards: CognitionBoard[] = [
   {
     id: 'politics',
     label: '政治与格局',
-    query: {
-      current: '(中国 国内 政策 OR 社会治理 OR 时政热点 OR 外交 国际格局) (site:news.cn OR site:people.com.cn OR site:chinanews.com.cn OR site:cctv.com OR site:thepaper.cn OR site:www.gov.cn) when:7d',
-      growth: '(政治学 OR 国家治理 OR 国际关系 OR 地缘政治 OR 制度分析 OR 公共政策 方法) (site:cssn.cn OR site:theory.people.com.cn OR site:edu.cn OR site:news.cn) when:3650d',
-    },
-    keywords: {
-      current: /中国|国内|政策|治理|外交|国际|社会|政治|国务院|改革|民生|热点/,
-      growth: /政治学|国家治理|国际关系|地缘政治|政治思维|制度|公共政策|治理|国家战略/,
-    },
+    feeds: [feeds.xinhuaPolitics, feeds.xinhuaWorld, feeds.peoplePolitics, feeds.chinaNewsPolitics, feeds.chinaNewsWorld],
+    keywords: /中国|国内|政策|治理|外交|国际|社会|政治|国务院|改革|民生|发展|安全|合作|会议/,
   },
   {
     id: 'thinking',
     label: '思维与经典',
-    query: {
-      current: '(中国 社会观察 OR 文化热点 OR 教育趋势 OR 思维方式 OR 读书) (site:people.com.cn OR site:news.cn OR site:thepaper.cn OR site:gmw.cn OR site:cssn.cn OR site:chinanews.com.cn) when:14d',
-      growth: '(系统思维 方法 OR 批判性思维 OR 战略思维 OR 毛泽东 思想 OR 资本论 解读 OR 道德经 解读 OR 资治通鉴 OR 史记) (site:cssn.cn OR site:people.com.cn OR site:qstheory.cn OR site:edu.cn) when:3650d',
-    },
-    keywords: {
-      current: /中国|社会|文化|教育|阅读|读书|思想|思维|历史|经典|趋势|观察/,
-      growth: /系统思维|批判性思维|决策|思维方法|毛泽东|毛选|资本论|马克思|道德经|老子|资治通鉴|史记|司马迁/,
-    },
+    feeds: [feeds.chinaNewsTheory, feeds.peopleCulture, feeds.chinaNewsCulture, feeds.peopleSociety],
+    keywords: /社会|文化|教育|阅读|读书|思想|思维|历史|经典|文明|理论|观察|研究|传统/,
   },
   {
     id: 'psychology',
     label: '心理与人际',
-    query: {
-      current: '(中国 心理健康 OR 社会心理 OR 职场关系 OR 青年心理 OR 人际关系) (site:psych.ac.cn OR site:people.com.cn OR site:thepaper.cn OR site:chinanews.com.cn OR site:gmw.cn) when:14d',
-      growth: '(心理学 原理 OR 社会心理学 OR 沟通方法 OR 人际关系 OR 情绪管理 OR 心理边界) (site:psych.ac.cn OR site:edu.cn OR site:cas.cn OR site:thepaper.cn) when:3650d',
-    },
-    keywords: {
-      current: /心理|认知|人际|情商|人格|行为|沟通|边界|社会关系/,
-      growth: /心理学|心理机制|社会心理|人际|沟通|情绪管理|人格|认知偏差|行为|边界/,
-    },
+    feeds: [feeds.peopleHealth, feeds.peopleSociety, feeds.chinaNewsHealth, feeds.chinaNewsSociety],
+    keywords: /心理|认知|人际|情绪|精神健康|精神卫生|睡眠|压力|职场|青少年心理|家庭关系|沟通|抑郁|焦虑/,
   },
   {
     id: 'law',
     label: '法律与民法',
-    query: {
-      current: '(中国 法治热点 OR 民法典 OR 权益保护 OR 典型案例 OR 社会案件) (site:court.gov.cn OR site:spp.gov.cn OR site:chinacourt.org OR site:news.cn OR site:people.com.cn OR site:thepaper.cn) when:14d',
-      growth: '(民法典 解读 OR 合同 法律知识 OR 劳动争议 实务 OR 侵权责任 OR 证据规则) (site:court.gov.cn OR site:spp.gov.cn OR site:npc.gov.cn OR site:edu.cn OR site:chinacourt.org) when:3650d',
-    },
-    keywords: {
-      current: /民法|民事|合同|侵权|婚姻家庭|劳动争议|法律|法治|司法|法院|检察|纠纷/,
-      growth: /民法|民事|合同|侵权|婚姻家庭|劳动争议|法律知识|证据|诉讼|权利|责任|司法实务/,
-    },
+    feeds: [feeds.peopleLaw, feeds.xinhuaLaw, feeds.chinaNewsLaw, feeds.chinaNewsSociety],
+    keywords: /民法|民事|合同|侵权|婚姻|劳动|法律|法治|司法|法院|检察|纠纷|权益|案件|执法/,
   },
   {
     id: 'economy',
     label: '经济与财富',
-    query: {
-      current: '(中国 经济热点 OR 货币政策 OR 资本流向 OR A股 OR 基金 OR 消费 OR 就业) (site:yicai.com OR site:caixin.com OR site:stcn.com OR site:cls.cn OR site:people.com.cn OR site:news.cn OR site:pbc.gov.cn OR site:stats.gov.cn) when:7d',
-      growth: '(经济学 原理 OR 资产配置 OR 基金 投资者教育 OR 商业模式 OR 现金流 OR 财务分析) (site:pbc.gov.cn OR site:csrc.gov.cn OR site:edu.cn OR site:cssn.cn OR site:cf40.org.cn OR site:caixin.com) when:3650d',
-    },
-    keywords: {
-      current: /经济|货币|金融|资本|资金|股市|股票|基金|投资|理财|商业|消费|就业|通胀|GDP|市场/,
-      growth: /经济学|资产配置|基金|投资|理财|商业模式|现金流|财务分析|风险管理|货币|金融|资本/,
-    },
+    feeds: [feeds.peopleFinance, feeds.xinhuaFinance, feeds.chinaNewsFinance, feeds.krNewsflash],
+    keywords: /经济|货币|金融|资本|资金|股市|股票|基金|投资|理财|消费|就业|通胀|市场|企业|价格|产业/,
   },
   {
     id: 'business',
     label: '商业思维',
-    query: {
-      current: '(中国 商业热点 OR 商业模式 OR 公司战略 OR 消费趋势 OR 创业 融资 OR 行业竞争) (site:36kr.com OR site:huxiu.com OR site:yicai.com OR site:caixin.com OR site:stcn.com OR site:cls.cn OR site:thepaper.cn) when:7d',
-      growth: '(商业模式 OR 单位经济 OR 现金流 OR 竞争战略 OR 用户价值)',
-    },
-    keywords: {
-      current: /商业|公司|企业|战略|消费|品牌|创业|融资|行业|市场|渠道|零售|利润|现金流/,
-      growth: /商业模式|单位经济|现金流|竞争战略|用户价值|护城河/,
-    },
+    feeds: [feeds.krGeneral, feeds.krArticles, feeds.chinaNewsFinance, feeds.xinhuaFinance],
+    keywords: /商业|公司|企业|战略|消费|品牌|创业|融资|行业|市场|渠道|零售|利润|现金流|产品|增长/,
   },
   {
     id: 'technology',
     label: '科技与 AI',
-    query: {
-      current: '(中国 科技热点 OR 科技突破 OR 人工智能 最新进展 OR AI 大模型 OR 芯片 OR 机器人) (site:36kr.com OR site:jiqizhixin.com OR site:ithome.com OR site:infoq.cn OR site:cas.cn OR site:news.cn OR site:people.com.cn) when:7d',
-      growth: '(人工智能 原理 OR 大模型 技术 OR 机器学习 方法 OR AI 工程实践 OR 科技产业 分析) (site:cas.cn OR site:edu.cn OR site:infoq.cn OR site:jiqizhixin.com OR site:oschina.net) when:3650d',
-    },
-    keywords: {
-      current: /人工智能|\bAI\b|大模型|芯片|量子|机器人|算法|算力|科技成果|科学发现|科研突破/i,
-      growth: /人工智能|\bAI\b|大模型|机器学习|深度学习|算法|模型|工程实践|技术原理|算力|芯片/i,
-    },
+    feeds: [feeds.xinhuaTechnology, feeds.peopleTechnology, feeds.krGeneral, feeds.krNewsflash],
+    keywords: /人工智能|\bAI\b|大模型|芯片|量子|机器人|算法|算力|科技(?!指数)|科学|科研|数字技术|智能|软件|硬件/i,
   },
   {
     id: 'medicine',
     label: '中医药与针灸',
-    query: {
-      current: '(中国 健康热点 OR 中医药 研究 OR 针灸 临床 OR 中药 科研 OR 医学进展) (site:kepuchina.cn OR site:people.com.cn OR site:news.cn OR site:chinanews.com.cn OR site:cas.cn OR site:satcm.gov.cn) when:14d',
-      growth: '(中医 基础理论 OR 针灸 原理 OR 中药 学习 OR 中医 临床研究 方法 OR 循证医学) (site:satcm.gov.cn OR site:edu.cn OR site:cas.cn OR site:cnki.net) when:3650d',
-    },
-    keywords: {
-      current: /中医|针灸|中药|穴位|经络|药材/,
-      growth: /中医|针灸|中药|穴位|经络|药材|循证|临床研究|证据/,
-    },
+    feeds: [feeds.chinaNewsHealth, feeds.peopleHealth, feeds.xinhuaHealth],
+    keywords: /中医|针灸|中药|穴位|经络|药材|医疗|医学|临床|健康|疾病|医院|药物|养生/,
   },
   {
     id: 'energy',
     label: '电力与能源',
-    query: {
-      current: '(中国 电网 热点 OR 新型电力系统 OR 电力市场 OR 能源转型 OR 新能源 产业) (site:nea.gov.cn OR site:sgcc.com.cn OR site:ndrc.gov.cn OR site:bjx.com.cn OR site:cpnn.com.cn OR site:news.cn OR site:stcn.com) when:14d',
-      growth: '(电力系统 原理 OR 电网 调度 OR 电力市场 机制 OR 储能 技术 OR 能源经济) (site:nea.gov.cn OR site:sgcc.com.cn OR site:edu.cn OR site:cas.cn OR site:cepc.com.cn) when:3650d',
-    },
-    keywords: {
-      current: /电网|电力|能源|新能源|储能|光伏|风电|核电|用电|输电|电价/,
-      growth: /电力系统|电网|电力市场|电网调度|储能|新能源|能源经济|输电|配电|电力技术/,
-    },
+    feeds: [feeds.xinhuaFinance, feeds.xinhuaTechnology, feeds.peopleFinance, feeds.krNewsflash],
+    keywords: /电网|电力|能源|新能源|储能|光伏|风电|核电|用电|输电|电价|充电|煤炭|石油|天然气/,
   },
 ];
 
@@ -142,27 +129,14 @@ const blockedPatterns = [
   /落户|招商|投资促进/i,
 ];
 
-const growthBlockedPatterns = [
-  /招生|报考|专业介绍|课程表|课程教学质量标准|需要学哪些课程/i,
-  /讲习班.*举办|系列活动|宣传月|论坛.*举办/i,
-  /周报|日报|早报|快讯|曝.*离职|认输/i,
-  /工作动态|校园新闻|学院新闻/i,
-  /成果亮相|再添硕果|人才培养|专业建设/i,
-  /培养方案|培养计划|培养目标|教学计划/i,
-  /附件\s*\d|一览表|指导教师|研究方向/i,
-  /专题讲座|作.*讲座|讲座举行/i,
-  /训赛|实训|竞赛|激荡.*之美/i,
-  /招收.*研究生|研究生.*目录|专业目录|博士研究生|硕士研究生/i,
-  /产业学院/i,
-];
-
-const blockedSources = /抖音|快手|小红书|哔哩哔哩|Bilibili|情感语录|励志语录/i;
-const blockedSourceUrls = /(?:^|\/\/)(?:opac|lib|library)\./i;
-
 const headers = {
-  'User-Agent': 'WorkBench-Desktop/0.1',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.1',
   Accept: 'application/rss+xml,application/xml,text/xml,*/*;q=0.6',
+  'Cache-Control': 'no-cache',
 };
+
+const feedCache = new Map<string, { expiresAt: number; items: FeedItem[] }>();
+const feedCacheDuration = 5 * 60 * 1000;
 
 function decodeXml(value: string) {
   return value
@@ -191,89 +165,87 @@ function getTag(block: string, name: string) {
   return match ? cleanText(match[1]) : '';
 }
 
-function getTagAttribute(block: string, name: string, attribute: string) {
-  const match = block.match(
-    new RegExp(`<${name}\\b[^>]*\\b${attribute}=(?:"([^"]*)"|'([^']*)')`, 'i'),
-  );
-  return match ? decodeXml(match[1] ?? match[2] ?? '').trim() : '';
-}
-
-function isAllowedSource(sourceUrl: string, query: string) {
+function safeHttpUrl(value: string) {
   try {
-    const hostname = new URL(sourceUrl).hostname.toLowerCase();
-    const domains = [...query.matchAll(/site:([a-z0-9.-]+)/gi)].map((match) => match[1].toLowerCase());
-    return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
   } catch {
-    return false;
+    return '';
   }
 }
 
-function googleNewsUrl(query: string) {
-  const url = new URL('https://news.google.com/rss/search');
-  url.searchParams.set('q', query);
-  url.searchParams.set('hl', 'zh-CN');
-  url.searchParams.set('gl', 'CN');
-  url.searchParams.set('ceid', 'CN:zh-Hans');
-  return url.toString();
+function parseFeed(xml: string, feed: DomesticFeed) {
+  const blocks = xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi) ?? [];
+  return blocks.map((block, index) => {
+    const title = getTag(block, 'title').replace(/\s+[-_—|]\s*(新华网|人民网|中国新闻网|36氪)$/i, '').trim();
+    const url = safeHttpUrl(getTag(block, 'link') || getTag(block, 'guid'));
+    const summary = getTag(block, 'description') || getTag(block, 'content:encoded');
+    const publishedAt = getTag(block, 'pubDate') || getTag(block, 'dc:date') || getTag(block, 'date');
+    return {
+      id: `${feed.name}-${index}-${url || title}`,
+      title,
+      url,
+      summary: summary.slice(0, 320),
+      source: feed.name,
+      publishedAt,
+    };
+  }).filter((item) => item.title && item.url);
 }
 
-async function fetchBoard(board: CognitionBoard, mode: CognitionMode) {
-  const query = board.query[mode];
+async function requestFeed(feed: DomesticFeed, bypassCache: boolean) {
+  const cached = feedCache.get(feed.url);
+  if (!bypassCache && cached && cached.expiresAt > Date.now()) return cached.items;
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15_000);
   try {
-    const response = await net.fetch(googleNewsUrl(query), { headers, signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const xml = await response.text();
-    const blocks = xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi) ?? [];
-    return blocks
-      .map((block, index) => {
-        const source = getTag(block, 'source');
-        const sourceUrl = getTagAttribute(block, 'source', 'url');
-        const title = getTag(block, 'title').replace(new RegExp(`\\s+-\\s+${source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'), '');
-        const url = getTag(block, 'link');
-        const summary = getTag(block, 'description');
-        const publishedAt = getTag(block, 'pubDate');
-        return {
-          id: `${mode}-${board.id}-${index}-${url || title}`,
-          title,
-          url,
-          summary: summary.slice(0, 320),
-          source,
-          sourceUrl,
-          publishedAt,
-          category: board.id,
-          categoryLabel: board.label,
-        };
-      })
-      .filter((item) => {
-        const searchable = `${item.title} ${item.summary}`;
-        return (
-          item.title &&
-          item.title.length >= 8 &&
-          item.url &&
-          isAllowedSource(item.sourceUrl, query) &&
-          board.keywords[mode].test(item.title) &&
-          !blockedPatterns.some((pattern) => pattern.test(searchable)) &&
-          (mode !== 'growth' || !growthBlockedPatterns.some((pattern) => pattern.test(searchable))) &&
-          !blockedSources.test(item.source) &&
-          !blockedSourceUrls.test(item.sourceUrl)
-        );
-      })
-      .slice(0, 12);
+    const response = await net.fetch(feed.url, {
+      headers,
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    if (!response.ok) throw new Error(`${feed.name} HTTP ${response.status}`);
+    const items = parseFeed(await response.text(), feed);
+    if (!items.length) throw new Error(`${feed.name} 暂无可解析内容`);
+    feedCache.set(feed.url, { expiresAt: Date.now() + feedCacheDuration, items });
+    return items;
   } finally {
     clearTimeout(timer);
   }
 }
 
+async function fetchBoard(board: CognitionBoard, bypassCache: boolean) {
+  const results = await Promise.allSettled(board.feeds.map((feed) => requestFeed(feed, bypassCache)));
+  return results
+    .flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+    .filter((item) => {
+      const searchable = `${item.title} ${item.summary}`;
+      return (
+        item.title.length >= 8 &&
+        board.keywords.test(item.title) &&
+        !blockedPatterns.some((pattern) => pattern.test(searchable))
+      );
+    })
+    .filter((item, index, array) => (
+      array.findIndex((candidate) => candidate.url === item.url || candidate.title === item.title) === index
+    ))
+    .sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0))
+    .slice(0, 18)
+    .map((item) => ({
+      ...item,
+      category: board.id,
+      categoryLabel: board.label,
+    }));
+}
+
 export async function fetchCognitionContent(
   category: CognitionCategoryId = 'digest',
   mode: CognitionMode = 'current',
-  rotation = 0,
+  refreshKey = 0,
 ) {
   if (mode === 'growth') {
     return {
-      items: getLearningContent(category, new Date(), rotation),
+      items: getLearningContent(category, new Date(), refreshKey),
       fetchedAt: new Date().toISOString(),
       category,
       mode,
@@ -281,15 +253,17 @@ export async function fetchCognitionContent(
   }
 
   const selectedBoards = category === 'digest' ? boards : boards.filter((board) => board.id === category);
-  const results = await Promise.allSettled(selectedBoards.map((board) => fetchBoard(board, mode)));
+  const results = await Promise.allSettled(selectedBoards.map((board) => fetchBoard(board, refreshKey > 0)));
   const perBoardLimit = category === 'digest' ? 2 : 12;
   const items = results
-    .flatMap((result) => (result.status === 'fulfilled' ? result.value.slice(0, perBoardLimit) : []))
-    .filter((item, index, array) => array.findIndex((candidate) => candidate.url === item.url || candidate.title === item.title) === index)
+    .flatMap((result) => result.status === 'fulfilled' ? result.value.slice(0, perBoardLimit) : [])
+    .filter((item, index, array) => (
+      array.findIndex((candidate) => candidate.url === item.url || candidate.title === item.title) === index
+    ))
     .sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0))
     .slice(0, category === 'digest' ? 14 : 12);
 
-  if (!items.length) throw new Error('当前板块暂时没有获取到合适内容，请稍后重试。');
+  if (!items.length) throw new Error('国内直连资讯源暂时没有获取到合适内容，请稍后重试。');
   return {
     items,
     fetchedAt: new Date().toISOString(),
