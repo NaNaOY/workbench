@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ExternalLink, GitFork, RefreshCw, Star } from 'lucide-react';
 import './knowledge.css';
 
 interface DailyItem {
@@ -222,7 +223,7 @@ export function DailyGrowthView() {
             <button type="button" className="reading-row" key={item.id} onClick={() => openLink(item.url)}>
               <span className="reading-index">{String(index + 2).padStart(2, '0')}</span>
               <span className="reading-copy"><strong>{item.title}</strong><small>{item.source} · {formatDate(item.publishedAt)}</small></span>
-              <span className="reading-arrow">↗</span>
+              <span className="reading-arrow"><ExternalLink size={14} /></span>
             </button>
           ))}
         </div>
@@ -287,7 +288,7 @@ export function GitHubRankingView() {
           <h2>发现值得学习、收藏和动手尝试的开源成果。</h2>
           <p>仓库名称和介绍保留原文；总榜按 Star 排序，周榜统计近 7 天新建仓库。</p>
         </div>
-        <button type="button" className="ranking-refresh" onClick={() => void refresh()} disabled={loading}>{loading ? '获取中…' : '刷新榜单'}</button>
+        <button type="button" className="ranking-refresh" onClick={() => void refresh()} disabled={loading}><RefreshCw size={13} />{loading ? '获取中…' : '刷新榜单'}</button>
       </section>
 
       <div className="ranking-toolbar">
@@ -315,9 +316,9 @@ export function GitHubRankingView() {
               <div className="repo-topics">{repo.topics.slice(0, 3).map((topic) => <span key={topic}>{topic}</span>)}</div>
             </div>
             <div className="repo-stats">
-              <strong>★ {formatCount(repo.stars)}</strong>
-              <span>⑂ {formatCount(repo.forks)}</span>
-              <button type="button" onClick={() => openLink(repo.url)}>在 GitHub 查看 ↗</button>
+              <strong><Star size={13} /> {formatCount(repo.stars)}</strong>
+              <span><GitFork size={13} /> {formatCount(repo.forks)}</span>
+              <button type="button" onClick={() => openLink(repo.url)}>在 GitHub 查看 <ExternalLink size={13} /></button>
             </div>
           </article>
         ))}

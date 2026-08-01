@@ -4,6 +4,7 @@ import App from './App';
 import './styles.css';
 import './assets-theme.css';
 import './glass-theme.css';
+import './refined-theme.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

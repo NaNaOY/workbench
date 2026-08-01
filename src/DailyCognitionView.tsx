@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import './cognition.css';
 
 type CategoryId = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'business' | 'technology' | 'medicine' | 'energy';
@@ -261,7 +262,7 @@ export default function DailyCognitionView() {
       localStorage.setItem(cacheKey, JSON.stringify({ ...response, date: dateKey() }));
       setItems(response.items);
       setFetchedAt(response.fetchedAt);
-      setFeedback(mode === 'growth' ? '已换一组知识卡' : '已获取本板块最新资讯');
+      setFeedback('已更新本板块');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '内容获取失败，请稍后重试。');
     } finally {
@@ -303,7 +304,7 @@ export default function DailyCognitionView() {
   function saveReflection() {
     const content = reflection.trim();
     if (!content) {
-      setFeedback('请先写下你的判断或学习收获');
+      setFeedback('请先写下你的思考或学习收获');
       return;
     }
     const entry: ReflectionEntry = {
@@ -359,7 +360,7 @@ export default function DailyCognitionView() {
           <span><i /> 每日 08:00 自动更新</span>
           <small>{fetchedAt ? `本板块更新于 ${formatTime(fetchedAt)}` : '等待首次更新'}</small>
           {feedback && <em>{feedback}</em>}
-          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在更新…' : mode === 'growth' ? '换一组知识卡' : '更新本板块'}</button>
+          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在更新…' : '更新本板块'}</button>
         </div>
       </section>
 
@@ -415,14 +416,14 @@ export default function DailyCognitionView() {
               <h3>{featured.title}</h3>
               <p>{featured.summary || '阅读完整内容，理解核心概念、适用场景与方法边界。'}</p>
               <div className="cognition-feature-actions">
-                <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '查看知识来源' : '阅读资讯原文'} <span>↗</span></button>
+                <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '查看知识来源' : '阅读资讯原文'} <ExternalLink size={13} /></button>
                 <button
                   type="button"
                   className="knowledge-drawer-toggle"
                   aria-expanded={knowledgeOpen}
                   onClick={() => setKnowledgeOpen((open) => !open)}
                 >
-                  {knowledgeOpen ? '收起列表' : `展开 5 条${feedLabel}`} <span>{knowledgeOpen ? '↑' : '↓'}</span>
+                  {knowledgeOpen ? '收起列表' : `展开 5 条${feedLabel}`} <span>{knowledgeOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</span>
                 </button>
               </div>
               <div className={`knowledge-drawer ${knowledgeOpen ? 'open' : ''}`}>
@@ -433,7 +434,7 @@ export default function DailyCognitionView() {
                       <button type="button" key={item.id} onClick={() => openArticle(item.url)}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
                         <div><strong>{item.title}</strong><small>{item.source} · {formatArticleDate(item.publishedAt)}</small></div>
-                        <b>↗</b>
+                        <b><ExternalLink size={13} /></b>
                       </button>
                     ))}
                   </div>
@@ -446,7 +447,7 @@ export default function DailyCognitionView() {
         </article>
 
         <article className="cognition-question">
-          <span className="cognition-kicker">{mode === 'growth' ? '学习迁移卡' : '今日判断框架'}</span>
+          <span className="cognition-kicker">{mode === 'growth' ? '学习迁移卡' : '今日思考练习'}</span>
           <div className="cognition-relation">
             <button
               type="button"
@@ -457,7 +458,7 @@ export default function DailyCognitionView() {
             >
               <span>关联知识条目</span>
               <strong>{relatedItem?.title ?? '等待内容加载'}</strong>
-              <b>{relatedPickerOpen ? '↑' : '↓'}</b>
+              <b>{relatedPickerOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</b>
             </button>
             <div className={`cognition-relation-menu ${relatedPickerOpen ? 'open' : ''}`}>
               <div>
@@ -490,7 +491,7 @@ export default function DailyCognitionView() {
           <div className="cognition-question-actions">
             <small>{mode === 'growth' ? '草稿会自动保留；点击保存后形成一张长期认知卡。' : '草稿会自动保留；点击保存后进入认知产出。'}</small>
             <button type="button" onClick={saveReflection} disabled={!reflection.trim()}>
-              {mode === 'growth' ? '保存学习卡' : '保存判断记录'}
+              {mode === 'growth' ? '保存学习卡' : '保存思考记录'}
             </button>
           </div>
         </article>
@@ -509,7 +510,7 @@ export default function DailyCognitionView() {
             {reflectionHistory.slice(0, 6).map((entry) => (
               <article key={entry.id}>
                 <div>
-                  <span>{entry.mode === 'growth' ? '学习卡' : '判断记录'} · {entry.categoryLabel}</span>
+                  <span>{entry.mode === 'growth' ? '学习卡' : '思考记录'} · {entry.categoryLabel}</span>
                   <small>{formatTime(entry.createdAt)}</small>
                 </div>
                 <strong>{entry.question}</strong>
@@ -531,7 +532,7 @@ export default function DailyCognitionView() {
             ))}
           </div>
         ) : (
-          <div className="cognition-output-empty">填写上方判断框架或学习迁移卡，然后点击保存；你的第一条认知产出会出现在这里。</div>
+          <div className="cognition-output-empty">填写上方思考练习或学习迁移卡，然后点击保存；你的第一条认知产出会出现在这里。</div>
         )}
       </section>
 

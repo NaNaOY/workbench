@@ -1,5 +1,29 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  ArrowRight,
+  BrainCircuit,
+  Check,
+  CheckCircle2,
+  CheckSquare2,
+  ChevronDown,
+  CircleCheck,
+  Clock3,
+  Command,
+  ExternalLink,
+  Github,
+  LayoutDashboard,
+  Lightbulb,
+  Link2,
+  ListTodo,
+  NotebookPen,
+  Pause,
+  Plus,
+  Sun,
+  Timer,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { createId, loadWorkspace, localDateKey, saveWorkspace } from './data';
 import { Bookmark, Note, Priority, Task, TaskStatus, WorkspaceData } from './types';
 import { GitHubRankingView } from './KnowledgeViews';
@@ -7,14 +31,14 @@ import DailyCognitionView from './DailyCognitionView';
 
 type View = 'dashboard' | 'growth' | 'github' | 'tasks' | 'notes' | 'focus' | 'bookmarks';
 
-const navItems: Array<{ id: View; label: string; icon: string }> = [
-  { id: 'growth', label: '每日认知', icon: '◇' },
-  { id: 'github', label: 'GitHub 干货榜', icon: '⌘' },
-  { id: 'dashboard', label: '工作总览', icon: '⌂' },
-  { id: 'tasks', label: '任务管理', icon: '☑' },
-  { id: 'notes', label: '灵感笔记', icon: '▤' },
-  { id: 'focus', label: '专注模式', icon: '◷' },
-  { id: 'bookmarks', label: '快捷入口', icon: '↗' },
+const navItems: Array<{ id: View; label: string; icon: LucideIcon }> = [
+  { id: 'growth', label: '每日认知', icon: BrainCircuit },
+  { id: 'github', label: 'GitHub 干货榜', icon: Github },
+  { id: 'dashboard', label: '工作总览', icon: LayoutDashboard },
+  { id: 'tasks', label: '任务管理', icon: ListTodo },
+  { id: 'notes', label: '灵感笔记', icon: NotebookPen },
+  { id: 'focus', label: '专注模式', icon: Timer },
+  { id: 'bookmarks', label: '快捷入口', icon: Link2 },
 ];
 
 const priorityText: Record<Priority, string> = {
@@ -375,7 +399,7 @@ export default function App() {
               className={`nav-item ${activeView === item.id ? 'active' : ''}`}
               onClick={() => setActiveView(item.id)}
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon"><item.icon size={17} strokeWidth={1.8} /></span>
               {item.label}
             </button>
           ))}
@@ -400,7 +424,7 @@ export default function App() {
             </div>
             <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建任务</span></div>
             <button type="button" className="primary-button" onClick={() => setShowTaskComposer(true)}>
-              <span>＋</span> 新建任务
+              <Plus size={16} aria-hidden="true" /> 新建任务
             </button>
           </div>
         </header>
@@ -416,7 +440,7 @@ export default function App() {
                 <span className="eyebrow">快速收集</span>
                 <h2>添加一件要事</h2>
               </div>
-              <button type="button" className="icon-button" aria-label="关闭" onClick={() => setShowTaskComposer(false)}>×</button>
+              <button type="button" className="icon-button" aria-label="关闭" onClick={() => setShowTaskComposer(false)}><X size={18} /></button>
             </div>
             <label className="field full-field">
               <span>任务内容</span>
@@ -444,7 +468,7 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div className="toast">✓ {toast}</div>}
+      {toast && <div className="toast"><CircleCheck size={18} aria-hidden="true" /> {toast}</div>}
     </div>
   );
 }
@@ -479,20 +503,20 @@ function DashboardView({
   return (
     <div className="dashboard-stack">
       <section className="metrics-grid">
-        <MetricCard icon="☑" tone="lavender" label="今日待办" value={String(dueToday.length)} detail={dueToday.length ? '件任务需要推进' : '今天的清单很轻盈'} action="查看清单" onClick={onOpenTasks} />
-        <MetricCard icon="◉" tone="mint" label="完成进度" value={`${completionRate}%`} detail={`${doneCount} / ${tasks.length} 项任务已完成`} action="任务管理" onClick={onOpenTasks} />
-        <MetricCard icon="◷" tone="peach" label="专注时间" value={minutesLabel} detail="今日累计深度工作" action="开始专注" onClick={onStartFocus} />
-        <MetricCard icon="✦" tone="blue" label="灵感笔记" value={String(notes.length)} detail="随时记录，不让想法溜走" action="打开笔记" onClick={onOpenNotes} />
+        <MetricCard icon={ListTodo} tone="lavender" label="今日待办" value={String(dueToday.length)} detail={dueToday.length ? '件任务需要推进' : '今天的清单很轻盈'} action="查看清单" onClick={onOpenTasks} />
+        <MetricCard icon={CheckCircle2} tone="mint" label="完成进度" value={`${completionRate}%`} detail={`${doneCount} / ${tasks.length} 项任务已完成`} action="任务管理" onClick={onOpenTasks} />
+        <MetricCard icon={Timer} tone="peach" label="专注时间" value={minutesLabel} detail="今日累计深度工作" action="开始专注" onClick={onStartFocus} />
+        <MetricCard icon={NotebookPen} tone="blue" label="灵感笔记" value={String(notes.length)} detail="随时记录，不让想法溜走" action="打开笔记" onClick={onOpenNotes} />
       </section>
 
       <section className="dashboard-grid">
         <div className="panel task-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">TODAY'S FOCUS</span>
+              <span className="eyebrow">今日重点</span>
               <h2>今天的优先事项</h2>
             </div>
-            <button type="button" className="text-button" onClick={onOpenTasks}>查看全部 →</button>
+            <button type="button" className="text-button" onClick={onOpenTasks}>查看全部 <ArrowRight size={14} /></button>
           </div>
           {visibleTasks.length ? (
             <div className="today-list">
@@ -508,14 +532,14 @@ function DashboardView({
               ))}
             </div>
           ) : (
-            <EmptyState icon="☀" title="今天没有待办" description="给自己留一点从容，或添加一件真正重要的事。" />
+            <EmptyState icon={Sun} title="今天没有待办" description="给自己留一点从容，或添加一件真正重要的事。" />
           )}
         </div>
 
         <div className="panel rhythm-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">WEEKLY RHYTHM</span>
+              <span className="eyebrow">本周节奏</span>
               <h2>保持你的节奏</h2>
             </div>
             <span className="tiny-badge">本周</span>
@@ -532,10 +556,10 @@ function DashboardView({
         <div className="panel notes-preview">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">RECENT NOTES</span>
+              <span className="eyebrow">灵感沉淀</span>
               <h2>最近记录</h2>
             </div>
-            <button type="button" className="text-button" onClick={onOpenNotes}>全部笔记 →</button>
+            <button type="button" className="text-button" onClick={onOpenNotes}>全部笔记 <ArrowRight size={14} /></button>
           </div>
           <div className="note-preview-grid">
             {notes.slice(0, 3).map((note) => (
@@ -550,10 +574,10 @@ function DashboardView({
 
         <div className="panel quick-panel">
           <img className="quick-brand-orbit" src="/assets/brand-orbit.jpg" alt="" aria-hidden="true" />
-          <span className="eyebrow">QUICK START</span>
+          <span className="eyebrow">快速开始</span>
           <h2>给现在一个方向</h2>
           <p>把注意力交给最重要的下一步，而不是更多的通知。</p>
-          <button type="button" className="dark-button" onClick={onStartFocus}>进入 25 分钟专注 <span>→</span></button>
+          <button type="button" className="dark-button" onClick={onStartFocus}>进入 25 分钟专注 <ArrowRight size={16} /></button>
           <div className="quick-foot"><span className="pulse-dot" /> 已开启本地自动保存</div>
         </div>
       </section>
@@ -561,14 +585,14 @@ function DashboardView({
   );
 }
 
-function MetricCard({ icon, tone, label, value, detail, action, onClick }: { icon: string; tone: string; label: string; value: string; detail: string; action: string; onClick: () => void }) {
+function MetricCard({ icon: Icon, tone, label, value, detail, action, onClick }: { icon: LucideIcon; tone: string; label: string; value: string; detail: string; action: string; onClick: () => void }) {
   return (
     <button type="button" className="metric-card" onClick={onClick}>
-      <span className={`metric-icon ${tone}`}>{icon}</span>
+      <span className={`metric-icon ${tone}`}><Icon size={17} strokeWidth={1.8} /></span>
       <span className="metric-label">{label}</span>
       <strong>{value}</strong>
       <span className="metric-detail">{detail}</span>
-      <span className="metric-action">{action} <b>→</b></span>
+      <span className="metric-action">{action} <ArrowRight size={13} /></span>
     </button>
   );
 }
@@ -592,7 +616,7 @@ function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { taskGroup
             </button>
           ))}
         </div>
-        <button type="button" className="secondary-button" onClick={onAdd}>＋ 添加任务</button>
+        <button type="button" className="secondary-button" onClick={onAdd}><Plus size={16} /> 添加任务</button>
       </div>
       <div className="task-board">
         {taskGroups.map((group) => {
@@ -620,12 +644,12 @@ function TaskCard({ task, onUpdate, onDelete }: { task: Task; onUpdate: (id: str
     <article className={`task-card ${task.status === 'done' ? 'completed' : ''}`}>
       <div className="task-card-top">
         <PriorityPill priority={task.priority} />
-        <button type="button" className="delete-button" aria-label={`删除 ${task.title}`} onClick={() => onDelete(task.id)}>×</button>
+        <button type="button" className="delete-button" aria-label={`删除 ${task.title}`} onClick={() => onDelete(task.id)}><X size={14} /></button>
       </div>
       <strong>{task.title}</strong>
       <span className="task-project">{task.project}</span>
       <div className="task-card-bottom">
-        <span className="due-date">◷ {formatDate(task.due)}</span>
+        <span className="due-date"><Clock3 size={13} /> {formatDate(task.due)}</span>
         <TaskStatusSelect
           value={task.status}
           taskTitle={task.title}
@@ -701,7 +725,7 @@ function TaskStatusSelect({ value, taskTitle, onChange }: { value: TaskStatus; t
       >
         <i aria-hidden="true" />
         <span>{statusText[value]}</span>
-        <b aria-hidden="true">⌄</b>
+        <ChevronDown size={14} aria-hidden="true" />
       </button>
       {open && createPortal(
         <div
@@ -725,7 +749,7 @@ function TaskStatusSelect({ value, taskTitle, onChange }: { value: TaskStatus; t
             >
               <i aria-hidden="true" />
               <span>{option.label}</span>
-              <b aria-hidden="true">{option.value === value ? '✓' : ''}</b>
+              <b aria-hidden="true">{option.value === value ? <Check size={14} /> : null}</b>
             </button>
           ))}
         </div>,
@@ -743,7 +767,7 @@ function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate, onUpda
   return (
     <div className="notes-layout">
       <aside className="notes-list-panel">
-        <div className="notes-list-head"><div><span className="eyebrow">ALL NOTES</span><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate}>＋</button></div>
+        <div className="notes-list-head"><div><span className="eyebrow">全部笔记</span><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate} aria-label="新建笔记"><Plus size={17} /></button></div>
         <div className="notes-list">
           {notes.map((note) => (
             <button type="button" key={note.id} className={`note-list-item ${selectedId === note.id ? 'selected' : ''}`} onClick={() => onSelect(note.id)}>
@@ -760,10 +784,10 @@ function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate, onUpda
             <input className="note-title-input" value={selectedNote.title} onChange={(event) => onUpdate(selectedNote.id, { title: event.target.value })} placeholder="笔记标题" />
             <div className="note-meta">最后更新于 {relativeTime(selectedNote.updatedAt)}</div>
             <textarea className="note-editor" value={selectedNote.content} onChange={(event) => onUpdate(selectedNote.id, { content: event.target.value })} placeholder="从一个想法开始…\n\n支持用空行整理你的段落。" />
-            <div className="editor-tip">⌘ / Ctrl + N 可从任何页面快速添加任务</div>
+            <div className="editor-tip"><Command size={14} /> Ctrl + N 可从任何页面快速添加任务</div>
           </>
         ) : (
-          <EmptyState icon="✦" title="还没有笔记" description="记录正在酝酿的想法，未来的你会感谢现在的自己。" action="新建笔记" onAction={onCreate} />
+          <EmptyState icon={Lightbulb} title="还没有笔记" description="记录正在酝酿的想法，未来的你会感谢现在的自己。" action="新建笔记" onAction={onCreate} />
         )}
       </section>
     </div>
@@ -783,13 +807,13 @@ function AppSelect({ value, options, onChange, ariaLabel }: { value: string; opt
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
     }}>
       <button type="button" className="app-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
-        <span>{selected?.label}</span><b aria-hidden="true">⌄</b>
+        <span>{selected?.label}</span><ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (
         <div className="app-select-menu" role="listbox" aria-label={ariaLabel}>
           {options.map((option) => (
             <button type="button" role="option" aria-selected={option.value === value} key={option.value} className={option.value === value ? 'selected' : ''} onClick={() => { onChange(option.value); setOpen(false); }}>
-              <span>{option.label}</span>{option.value === value && <b aria-hidden="true">✓</b>}
+              <span>{option.label}</span>{option.value === value && <Check size={14} aria-hidden="true" />}
             </button>
           ))}
         </div>
@@ -803,20 +827,20 @@ function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, foc
   return (
     <div className="focus-layout">
       <section className="focus-hero">
-        <span className="eyebrow">DEEP WORK</span>
+        <span className="eyebrow">深度工作</span>
         <h2>给重要的事，一段完整的时间。</h2>
         <p>25 分钟内，暂时放下切换与干扰，只推进一件事。</p>
         <label className="focus-task-select">
           <span>本轮专注于</span>
           <AppSelect ariaLabel="选择本轮专注任务" value={focusTaskId} options={[{ value: '', label: '选择一个任务（可选）' }, ...tasks.map((task) => ({ value: task.id, label: task.title }))]} onChange={onFocusTask} />
         </label>
-        {focusTask && <div className="focus-task-chip">☑ {focusTask.title}</div>}
+        {focusTask && <div className="focus-task-chip"><CheckSquare2 size={14} /> {focusTask.title}</div>}
       </section>
       <section className="timer-panel">
         <div className="timer-ring" style={{ '--progress': `${progress * 3.6}deg` } as React.CSSProperties}>
           <div className="timer-core"><span>{isFocusing ? '正在专注' : '准备开始'}</span><strong>{formatTimer(secondsLeft)}</strong><small>番茄时段 · 25 分钟</small></div>
         </div>
-        <div className="timer-actions"><button type="button" className="dark-button large" onClick={onToggle}>{isFocusing ? '暂停计时' : '开始专注'} <span>{isFocusing ? 'Ⅱ' : '→'}</span></button><button type="button" className="text-button" onClick={onReset}>重新开始</button></div>
+        <div className="timer-actions"><button type="button" className="dark-button large" onClick={onToggle}>{isFocusing ? '暂停计时' : '开始专注'} {isFocusing ? <Pause size={16} /> : <ArrowRight size={16} />}</button><button type="button" className="text-button" onClick={onReset}>重新开始</button></div>
       </section>
       <section className="focus-stats">
         <div><span>今日累计</span><strong>{focusMinutes}<small> 分钟</small></strong></div>
@@ -835,7 +859,7 @@ function BookmarksView({ bookmarks, showComposer, draft, onShowComposer, onHideC
           <h2>常用工具</h2>
           <p>保存网站、文档库和日常工具，一次点击直达。</p>
         </div>
-        <button type="button" className="secondary-button" onClick={onShowComposer}>＋ 添加入口</button>
+        <button type="button" className="secondary-button" onClick={onShowComposer}><Plus size={16} /> 添加入口</button>
       </div>
       {showComposer && (
         <form className="inline-composer" onSubmit={onAdd}>
@@ -848,9 +872,9 @@ function BookmarksView({ bookmarks, showComposer, draft, onShowComposer, onHideC
       <div className="bookmarks-grid">
         {bookmarks.map((bookmark) => (
           <article className="bookmark-card" key={bookmark.id} style={{ background: bookmark.color }}>
-            <div className="bookmark-card-top"><span className="bookmark-icon">↗</span><button type="button" className="delete-button" aria-label={`删除 ${bookmark.title}`} onClick={() => onDelete(bookmark.id)}>×</button></div>
+            <div className="bookmark-card-top"><span className="bookmark-icon"><ExternalLink size={16} /></span><button type="button" className="delete-button" aria-label={`删除 ${bookmark.title}`} onClick={() => onDelete(bookmark.id)}><X size={14} /></button></div>
             <h3>{bookmark.title}</h3><p>{bookmark.description}</p>
-            <button type="button" className="open-link" onClick={() => onOpen(bookmark.url)}>打开链接 <span>→</span></button>
+            <button type="button" className="open-link" onClick={() => onOpen(bookmark.url)}>打开链接 <ArrowRight size={14} /></button>
           </article>
         ))}
       </div>
@@ -858,6 +882,6 @@ function BookmarksView({ bookmarks, showComposer, draft, onShowComposer, onHideC
   );
 }
 
-function EmptyState({ icon, title, description, action, onAction }: { icon: string; title: string; description: string; action?: string; onAction?: () => void }) {
-  return <div className="empty-state"><span>{icon}</span><strong>{title}</strong><p>{description}</p>{action && <button type="button" className="secondary-button" onClick={onAction}>{action}</button>}</div>;
+function EmptyState({ icon: Icon, title, description, action, onAction }: { icon: LucideIcon; title: string; description: string; action?: string; onAction?: () => void }) {
+  return <div className="empty-state"><span><Icon size={20} strokeWidth={1.6} /></span><strong>{title}</strong><p>{description}</p>{action && <button type="button" className="secondary-button" onClick={onAction}>{action}</button>}</div>;
 }
