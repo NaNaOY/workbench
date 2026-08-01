@@ -124,6 +124,8 @@ function GlobalClickEffect() {
   return null;
 }
 
+const BASE_URL = import.meta.env.BASE_URL;
+
 export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceData>(() => loadWorkspace());
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -384,7 +386,7 @@ export default function App() {
       <GlobalClickEffect />
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark"><img src="/assets/workbench-icon.png" alt="WorkBench" /></div>
+          <div className="brand-mark"><img src={`${BASE_URL}assets/workbench-icon.png`} alt="WorkBench" /></div>
           <div>
             <strong>WorkBench</strong>
             <span>个人工作台</span>
@@ -419,7 +421,7 @@ export default function App() {
           </div>
           <div className="topbar-actions">
             <div className="profile-chip" title="我的工作台">
-              <img src="/assets/cozy-duck.jpg" alt="我的头像" />
+              <img src={`${BASE_URL}assets/cozy-duck.jpg`} alt="我的头像" />
               <span><strong>我的空间</strong><small>本地工作台</small></span>
             </div>
             <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建任务</span></div>
@@ -573,7 +575,7 @@ function DashboardView({
         </div>
 
         <div className="panel quick-panel">
-          <img className="quick-brand-orbit" src="/assets/brand-orbit.jpg" alt="" aria-hidden="true" />
+          <img className="quick-brand-orbit" src={`${BASE_URL}assets/brand-orbit.jpg`} alt="" aria-hidden="true" />
           <span className="eyebrow">快速开始</span>
           <h2>给现在一个方向</h2>
           <p>把注意力交给最重要的下一步，而不是更多的通知。</p>
