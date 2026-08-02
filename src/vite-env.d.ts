@@ -4,5 +4,7 @@ interface Window {
   desktop?: {
     isDesktop: boolean;
     platform: string;
+    persistStorage?: () => void;
+    getStoragePath?: () => Promise<string>;
   };
 }

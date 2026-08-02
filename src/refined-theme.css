@@ -2443,3 +2443,1369 @@ h2 {
     font-size: 12px;
   }
 }
+/* Knowledge cards stay expanded and align their row content consistently. */
+.knowledge-drawer {
+  grid-template-rows: 1fr;
+  margin-top: 18px;
+  opacity: 1;
+}
+
+.cognition-feature-actions {
+  min-height: 0;
+  margin-top: 18px;
+}
+
+.knowledge-drawer-list button {
+  align-items: center;
+}
+
+.knowledge-drawer-list button > span,
+.knowledge-drawer-list button > div,
+.knowledge-drawer-list button > b {
+  align-self: center;
+}
+
+.knowledge-drawer-list button > div {
+  display: grid;
+  align-content: center;
+  min-height: 38px;
+}
+
+.dashboard-grid .panel-heading h2,
+.lower-grid .panel-heading h2,
+.quick-panel > h2 {
+  margin-top: 0;
+}
+/* Center cognition module and category labels inside their cards. */
+.cognition-module-tabs button,
+.cognition-category-strip button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+/* GitHub ranking carousel: a calm, glass discovery rail with snap scrolling. */
+.repo-list.repo-carousel {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 0 16px;
+  border: 1px solid rgba(123, 129, 214, .2);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 4%, rgba(116, 132, 226, .16), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, .8), rgba(236, 240, 255, .58));
+  box-shadow:
+    0 18px 46px rgba(49, 58, 111, .08),
+    inset 0 1px 0 rgba(255, 255, 255, .82);
+  isolation: isolate;
+}
+
+.repo-list.repo-carousel::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, rgba(255, 255, 255, .2), transparent 42%, rgba(210, 219, 255, .2));
+  content: "";
+  pointer-events: none;
+}
+
+.repo-carousel-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 0 20px 10px;
+  scroll-behavior: smooth;
+  scroll-snap-type: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: rgba(91, 91, 214, .45) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+
+.repo-carousel-track::-webkit-scrollbar {
+  height: 8px;
+}
+
+.repo-carousel-track::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .3);
+  border-radius: 999px;
+}
+
+.repo-carousel-track::-webkit-scrollbar-thumb {
+  background: rgba(91, 91, 214, .38);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row {
+  position: relative;
+  display: flex;
+  flex: 0 0 clamp(286px, 31vw, 390px);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-height: 302px;
+  padding: 23px 22px 19px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .76);
+  border-radius: 18px;
+  background:
+    linear-gradient(148deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .48)),
+    rgba(231, 236, 255, .38);
+  box-shadow:
+    0 15px 26px rgba(45, 54, 110, .1),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
+  backdrop-filter: blur(18px) saturate(122%);
+  -webkit-backdrop-filter: blur(18px) saturate(122%);
+  scroll-snap-align: none;
+  transition: transform .24s var(--wb-ease), box-shadow .24s ease, border-color .24s ease, background .24s ease;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row::before {
+  position: absolute;
+  top: -70px;
+  right: -64px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(255, 255, 255, .36);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .2), transparent 66%);
+  content: "";
+  pointer-events: none;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row:hover {
+  transform: translateY(-4px);
+  border-color: rgba(91, 91, 214, .34);
+  background:
+    linear-gradient(148deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, .62)),
+    rgba(231, 236, 255, .46);
+  box-shadow:
+    0 20px 32px rgba(45, 54, 110, .15),
+    inset 0 1px 0 rgba(255, 255, 255, .96);
+}
+
+.repo-list.repo-carousel .repo-card.repo-row:focus-within {
+  border-color: rgba(91, 91, 214, .55);
+  box-shadow:
+    0 0 0 3px rgba(91, 91, 214, .13),
+    0 18px 30px rgba(45, 54, 110, .13);
+}
+
+.repo-list.repo-carousel .repo-card.rank-1 {
+  border-color: rgba(206, 165, 82, .42);
+  background:
+    linear-gradient(148deg, rgba(255, 255, 255, .84), rgba(255, 248, 228, .57)),
+    rgba(255, 246, 220, .38);
+}
+
+.repo-list.repo-carousel .repo-card.rank-1:hover {
+  border-color: rgba(190, 143, 49, .56);
+  background:
+    linear-gradient(148deg, rgba(255, 255, 255, .92), rgba(255, 248, 228, .7)),
+    rgba(255, 246, 220, .48);
+}
+
+.repo-list.repo-carousel .repo-card > img {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  margin: 0 0 18px;
+  border: 1px solid rgba(255, 255, 255, .88);
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(54, 62, 109, .12);
+}
+
+.repo-list.repo-carousel .repo-card .rank-number {
+  position: absolute;
+  top: 23px;
+  right: 22px;
+  z-index: 1;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .46);
+  color: rgba(101, 109, 148, .82);
+  font-size: 11px;
+  letter-spacing: .6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+
+.repo-list.repo-carousel .repo-card.rank-1 .rank-number {
+  border-color: rgba(213, 173, 91, .45);
+  background: rgba(255, 248, 229, .7);
+  color: #a87426;
+}
+
+.repo-list.repo-carousel .repo-card .repo-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.repo-list.repo-carousel .repo-card .repo-name-line {
+  align-items: flex-start;
+  padding-right: 34px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-name-line h3 {
+  color: var(--wb-ink);
+  font-size: 16px;
+  font-weight: 720;
+  letter-spacing: -.35px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.repo-list.repo-carousel .repo-card .repo-name-line > span {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  border: 1px solid rgba(126, 136, 182, .16);
+  background: rgba(255, 255, 255, .46);
+  color: #68729c;
+  font-size: 9px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-copy p {
+  min-height: 61px;
+  margin-top: 11px;
+  color: var(--wb-muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+  -webkit-line-clamp: 3;
+}
+
+.repo-list.repo-carousel .repo-card .repo-topics {
+  min-height: 24px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-topics span {
+  border: 1px solid rgba(117, 132, 192, .13);
+  background: rgba(255, 255, 255, .48);
+  color: #6976a0;
+  font-size: 9px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats {
+  display: flex;
+  align-items: center;
+  justify-items: initial;
+  gap: 11px;
+  margin-top: 17px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(123, 129, 177, .16);
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats strong,
+.repo-list.repo-carousel .repo-card .repo-stats > span {
+  color: var(--wb-ink-soft);
+  font-size: 11px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats strong {
+  color: #a27126;
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin: 0 0 0 auto;
+  padding: 0 10px;
+  border: 1px solid rgba(91, 91, 214, .2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .46);
+  color: var(--wb-accent);
+  font-size: 10px;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats button:hover {
+  border-color: rgba(91, 91, 214, .4);
+  background: rgba(255, 255, 255, .8);
+  transform: translateY(-1px);
+}
+
+.repo-list.repo-carousel .ranking-empty {
+  min-height: 242px;
+  margin: 0 20px;
+  border: 1px dashed rgba(105, 115, 165, .25);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .28);
+}
+
+@media (max-width: 900px) {
+  .repo-carousel-track {
+    gap: 13px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row {
+    flex-basis: min(74vw, 350px);
+  }
+}
+
+@media (max-width: 580px) {
+  .repo-list.repo-carousel {
+    padding-top: 14px;
+    padding-bottom: 11px;
+    border-radius: 16px;
+  }
+
+  .repo-carousel-track {
+    gap: 11px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row {
+    flex-basis: min(82vw, 320px);
+    min-height: 292px;
+    padding: 20px 18px 16px;
+  }
+
+  .repo-list.repo-carousel .repo-card .rank-number {
+    top: 20px;
+    right: 18px;
+  }
+
+  .repo-list.repo-carousel .repo-card > img {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .repo-carousel-track {
+    scroll-behavior: auto;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row,
+  .repo-list.repo-carousel .repo-card .repo-stats button {
+    transition: none;
+  }
+}
+
+/* Carousel controls replace the hard-to-use full-width scrollbar. */
+.repo-list.repo-carousel > .repo-carousel-control {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .84);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .72);
+  color: var(--wb-ink-soft);
+  box-shadow:
+    0 8px 18px rgba(45, 54, 110, .13),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, opacity .18s ease;
+}
+
+.repo-list.repo-carousel > .repo-carousel-control.previous {
+  left: 10px;
+}
+
+.repo-list.repo-carousel > .repo-carousel-control.next {
+  right: 10px;
+}
+
+.repo-list.repo-carousel > .repo-carousel-control:hover:not(:disabled) {
+  border-color: rgba(91, 91, 214, .38);
+  background: rgba(255, 255, 255, .94);
+  color: var(--wb-accent);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.repo-list.repo-carousel > .repo-carousel-control:focus-visible {
+  outline: 2px solid rgba(91, 91, 214, .48);
+  outline-offset: 3px;
+}
+
+.repo-list.repo-carousel > .repo-carousel-control:disabled {
+  cursor: default;
+  opacity: .38;
+}
+
+.repo-list.repo-carousel .repo-carousel-track {
+  padding-right: 54px;
+  padding-left: 54px;
+  scrollbar-width: none;
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+@media (max-width: 900px) {
+  .repo-list.repo-carousel > .repo-carousel-control.previous {
+    left: 7px;
+  }
+
+  .repo-list.repo-carousel > .repo-carousel-control.next {
+    right: 7px;
+  }
+
+  .repo-list.repo-carousel .repo-carousel-track {
+    padding-right: 49px;
+    padding-left: 49px;
+  }
+}
+
+@media (max-width: 580px) {
+  .repo-list.repo-carousel > .repo-carousel-control {
+    width: 34px;
+    height: 34px;
+  }
+
+  .repo-list.repo-carousel > .repo-carousel-control.previous {
+    left: 6px;
+  }
+
+  .repo-list.repo-carousel > .repo-carousel-control.next {
+    right: 6px;
+  }
+
+  .repo-list.repo-carousel .repo-carousel-track {
+    padding-right: 45px;
+    padding-left: 45px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .repo-list.repo-carousel > .repo-carousel-control {
+    transition: none;
+  }
+}
+
+/* Keep the rail transparent so every repository card reads as its own surface. */
+.repo-list.repo-carousel {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: auto;
+}
+
+.repo-list.repo-carousel::before {
+  display: none;
+}
+
+.repo-list.repo-carousel .repo-carousel-track {
+  cursor: grab;
+  user-select: auto;
+}
+
+.repo-list.repo-carousel .repo-carousel-track.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+  scroll-behavior: auto;
+}
+
+.repo-list.repo-carousel .repo-carousel-track.is-dragging .repo-card {
+  transition: none;
+}
+
+/* Keep horizontal overflow inside the carousel, never on the whole page. */
+.repo-list.repo-carousel {
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.repo-list.repo-carousel .repo-carousel-track {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Keep relation choices readable on the light cognition panel. */
+.cognition-relation-menu button > span {
+  color: #6d7892;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cognition-relation-menu button > strong {
+  color: #2f374d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cognition-relation-menu button:hover > strong,
+.cognition-relation-menu button.active > strong {
+  color: var(--wb-accent);
+}
+
+.cognition-page--current .cognition-relation-menu button > strong {
+  color: #2f374d;
+}
+
+.cognition-page--current .cognition-relation-menu button.active > strong {
+  color: #4f5bc7;
+}
+
+.cognition-page--growth .cognition-relation-menu button > strong {
+  color: #5f4935;
+}
+
+.cognition-page--growth .cognition-relation-menu button.active > strong {
+  color: #98642b;
+}
+
+/* Arrow clicks use a single eased pass instead of fighting native snap physics. */
+.repo-list.repo-carousel .repo-carousel-track.is-animating {
+  cursor: default;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+
+/* Single-title card hierarchy */
+.cognition-header h2,
+.knowledge-heading h2,
+.github-heading h2 {
+  margin-top: 0;
+}
+
+/* iOS-style carousel motion: native momentum without automatic snapping. */
+.repo-list.repo-carousel .repo-carousel-track {
+  scroll-snap-type: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.repo-list.repo-carousel .repo-card {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
+.repo-list.repo-carousel .repo-carousel-track.is-animating {
+  will-change: scroll-position;
+}
+
+.repo-list.repo-carousel .repo-carousel-track.is-dragging {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
+.repo-list.repo-carousel > .repo-carousel-control:active:not(:disabled) {
+  transform: translateY(-50%) scale(.94);
+}
+
+/* Standalone cognition mode buttons: keep the two modes out of the category card. */
+.cognition-module-tabs--standalone {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cognition-module-tabs--standalone button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--wb-line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .74);
+  color: var(--wb-muted);
+  box-shadow: 0 4px 12px rgba(69, 80, 117, .045);
+}
+
+.cognition-module-tabs--standalone button.active {
+  border-color: rgba(91, 91, 214, .18);
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+  box-shadow: 0 5px 14px rgba(91, 91, 214, .1);
+}
+
+.cognition-module-tabs--standalone button:hover {
+  border-color: var(--wb-line-strong);
+  background: var(--wb-surface);
+  color: var(--wb-ink-soft);
+}
+
+.cognition-control-panel .cognition-category-strip {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* GitHub ranking: content-first rail without individual card surfaces. */
+.repo-list.repo-carousel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.repo-list.repo-carousel .repo-carousel-track {
+  gap: 18px;
+  padding: 0 20px 4px;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row,
+.repo-list.repo-carousel .repo-card.rank-1,
+.repo-list.repo-carousel .repo-card.rank-1:hover,
+.repo-list.repo-carousel .repo-card.repo-row:hover {
+  min-height: 248px;
+  padding: 18px 18px 14px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: none;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row::before {
+  display: none;
+}
+
+.repo-list.repo-carousel .repo-card > img {
+  margin-bottom: 12px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-copy p {
+  min-height: 42px;
+  margin-top: 8px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-topics {
+  min-height: 20px;
+  padding-top: 8px;
+}
+
+.repo-list.repo-carousel .repo-card .repo-stats {
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row:focus-within {
+  border-color: rgba(91, 91, 214, .36);
+  box-shadow: 0 0 0 3px rgba(91, 91, 214, .11) !important;
+}
+
+@media (max-width: 580px) {
+  .cognition-module-tabs--standalone {
+    gap: 8px;
+  }
+
+  .cognition-module-tabs--standalone button {
+    flex: 1 1 0;
+    padding: 0 12px;
+  }
+
+  .repo-list.repo-carousel .repo-carousel-track {
+    gap: 12px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row {
+    min-height: 236px;
+    padding: 17px 16px 13px;
+  }
+}
+/* Glass repository cards */
+.repo-list.repo-carousel .repo-card.repo-row {
+  min-height: 248px;
+  padding: 18px 18px 14px;
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .64), rgba(239, 244, 255, .28)),
+    rgba(255, 255, 255, .22) !important;
+  box-shadow:
+    0 14px 30px rgba(51, 63, 121, .1),
+    inset 0 1px 0 rgba(255, 255, 255, .86) !important;
+  backdrop-filter: blur(20px) saturate(128%);
+  -webkit-backdrop-filter: blur(20px) saturate(128%);
+}
+
+.repo-list.repo-carousel .repo-card.repo-row:hover {
+  border-color: rgba(111, 125, 220, .34);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .78), rgba(239, 244, 255, .38)),
+    rgba(255, 255, 255, .28) !important;
+  box-shadow:
+    0 18px 34px rgba(51, 63, 121, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .94) !important;
+}
+
+.repo-list.repo-carousel .repo-card.rank-1,
+.repo-list.repo-carousel .repo-card.rank-1:hover {
+  background:
+    linear-gradient(145deg, rgba(255, 252, 242, .72), rgba(255, 247, 225, .34)),
+    rgba(255, 255, 255, .24) !important;
+}
+
+.repo-list.repo-carousel .repo-card > img {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  box-shadow: 0 10px 20px rgba(46, 55, 96, .16);
+}
+
+.cognition-module-tabs--standalone button {
+  min-height: 48px;
+  gap: 9px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 720;
+}
+
+.cognition-module-tabs--standalone button > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(91, 91, 214, .1);
+  color: var(--wb-accent);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.cognition-module-tabs--standalone button.active > span {
+  background: rgba(91, 91, 214, .16);
+}
+
+@media (max-width: 580px) {
+  .cognition-module-tabs--standalone button {
+    min-height: 46px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
+
+  .cognition-module-tabs--standalone button > span {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+    font-size: 15px;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row {
+    min-height: 236px;
+    padding: 17px 16px 13px;
+  }
+
+  .repo-list.repo-carousel .repo-card > img {
+    width: 64px;
+    height: 64px;
+  }
+}
+/* Glass card separation fix */
+.repo-list.repo-carousel .repo-carousel-track {
+  display: flex;
+  align-items: stretch;
+  gap: 22px !important;
+  padding: 8px 24px 12px !important;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row {
+  box-sizing: border-box;
+  flex: 0 0 clamp(286px, 31vw, 390px);
+  min-width: 0;
+  margin: 0 !important;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(213, 220, 255, .82);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(238, 243, 255, .34)),
+    rgba(255, 255, 255, .24) !important;
+  box-shadow:
+    0 16px 32px rgba(45, 54, 110, .13),
+    inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+  background-clip: padding-box;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row + .repo-card.repo-row {
+  margin-left: 0 !important;
+}
+
+.repo-list.repo-carousel .repo-card.rank-1,
+.repo-list.repo-carousel .repo-card.rank-1:hover {
+  border-color: rgba(218, 181, 103, .62);
+  background:
+    linear-gradient(145deg, rgba(255, 253, 246, .78), rgba(255, 247, 224, .4)),
+    rgba(255, 255, 255, .3) !important;
+}
+
+.repo-list.repo-carousel .repo-card.repo-row:hover {
+  border-color: rgba(105, 120, 214, .48);
+  box-shadow:
+    0 20px 38px rgba(45, 54, 110, .18),
+    inset 0 1px 0 rgba(255, 255, 255, .96) !important;
+}
+
+@media (max-width: 900px) {
+  .repo-list.repo-carousel .repo-carousel-track {
+    gap: 18px !important;
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .repo-list.repo-carousel .repo-carousel-track {
+    gap: 14px !important;
+    padding: 6px 14px 10px !important;
+  }
+
+  .repo-list.repo-carousel .repo-card.repo-row {
+    flex-basis: min(82vw, 320px);
+    border-radius: 18px;
+  }
+}
+/* Coordinated carousel scrollbar */
+.repo-list.repo-carousel .repo-carousel-track {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(101, 113, 205, .38) rgba(116, 128, 193, .1);
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar {
+  display: block;
+  width: 0;
+  height: 7px;
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar-track {
+  background: rgba(116, 128, 193, .1);
+  border: 1px solid rgba(255, 255, 255, .56);
+  border-radius: 999px;
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(112, 124, 218, .48), rgba(91, 91, 214, .32));
+  border: 2px solid rgba(246, 248, 255, .72);
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, rgba(112, 124, 218, .62), rgba(91, 91, 214, .46));
+  background-clip: padding-box;
+}
+/* Hide carousel scrollbar while preserving drag, wheel and arrow scrolling. */
+.repo-list.repo-carousel .repo-carousel-track {
+  scrollbar-width: none;
+}
+
+.repo-list.repo-carousel .repo-carousel-track::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+/* Rounded carousel focus state */
+.repo-list.repo-carousel .repo-carousel-track {
+  border-radius: 22px;
+  outline: none;
+}
+
+.repo-list.repo-carousel .repo-carousel-track:focus,
+.repo-list.repo-carousel .repo-carousel-track:focus-visible {
+  outline: none;
+  border-radius: 22px;
+  box-shadow:
+    inset 0 0 0 1px rgba(116, 128, 220, .34),
+    0 0 0 3px rgba(116, 128, 220, .12);
+}
+
+.repo-list.repo-carousel .repo-card.repo-row,
+.repo-list.repo-carousel .repo-card.repo-row:hover,
+.repo-list.repo-carousel .repo-card.repo-row:focus-within,
+.repo-list.repo-carousel .repo-card.rank-1,
+.repo-list.repo-carousel .repo-card.rank-1:hover,
+.repo-list.repo-carousel .repo-card.rank-1:focus-within {
+  border-radius: 22px !important;
+}
+/* GitHub full-height composition: let the ranking rail use the remaining viewport. */
+@media (min-width: 1181px) {
+  .workspace--github .content {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .workspace--github .knowledge-page {
+    display: grid;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .workspace--github .knowledge-page .repo-list.repo-carousel {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .workspace--github .repo-list.repo-carousel .repo-carousel-track {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .workspace--github .repo-list.repo-carousel .repo-card.repo-row {
+    height: 100%;
+  }
+}
+/* Compact GitHub ranking composition: avoid stretching cards to the viewport. */
+@media (min-width: 1181px) {
+  .workspace--github .content {
+    display: block;
+    min-height: 0;
+  }
+
+  .workspace--github .knowledge-page {
+    display: grid;
+    min-height: 0;
+    flex: none;
+    grid-template-rows: none;
+  }
+
+  .workspace--github .knowledge-page .repo-list.repo-carousel {
+    height: auto;
+    min-height: 0;
+  }
+
+  .workspace--github .repo-list.repo-carousel .repo-carousel-track {
+    height: auto;
+    min-height: 0;
+  }
+
+  .workspace--github .repo-list.repo-carousel .repo-card.repo-row {
+    height: auto !important;
+    min-height: 280px;
+  }
+}
+/* Cognition board pager */
+.cognition-board-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 2px;
+}
+
+.cognition-board-pager-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 118px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--wb-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .66);
+  color: var(--wb-muted);
+  font-size: 11.5px;
+  font-weight: 680;
+  box-shadow: 0 5px 14px rgba(69, 80, 117, .045);
+  transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease, opacity .18s ease;
+}
+
+.cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(91, 91, 214, .34);
+  background: rgba(255, 255, 255, .92);
+  color: var(--wb-accent);
+  transform: translateY(-1px);
+}
+
+.cognition-board-pager-button:active:not(:disabled) {
+  transform: translateY(0) scale(.98);
+}
+
+.cognition-board-pager-button:disabled {
+  cursor: default;
+  opacity: .35;
+}
+
+.cognition-board-pager-status {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  min-width: 150px;
+  color: var(--wb-muted);
+  white-space: nowrap;
+}
+
+.cognition-board-pager-status strong {
+  color: var(--wb-accent);
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+.cognition-board-pager-status span {
+  color: var(--wb-faint);
+  font-size: 11px;
+}
+
+.cognition-board-pager-status em {
+  max-width: 180px;
+  margin-left: 5px;
+  overflow: hidden;
+  color: var(--wb-ink-soft);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 680;
+  text-overflow: ellipsis;
+}
+
+.cognition-page--growth .cognition-board-pager-status strong {
+  color: #a36c2a;
+}
+
+.cognition-page--growth .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(185, 135, 67, .38);
+  color: #9b6729;
+}
+
+@media (max-width: 620px) {
+  .cognition-board-pager-button {
+    min-width: 40px;
+    width: 40px;
+    padding: 0;
+  }
+
+  .cognition-board-pager-button span {
+    display: none;
+  }
+
+  .cognition-board-pager-status {
+    min-width: 0;
+  }
+
+  .cognition-board-pager-status em {
+    max-width: 120px;
+  }
+}
+/* Cognition triangle pager: compact controls above the feature cards. */
+.cognition-board-pager {
+  position: relative;
+  z-index: 2;
+  min-height: 42px;
+  margin: -2px 0 -2px;
+  padding: 0 2px;
+}
+
+.cognition-board-pager-button {
+  min-width: 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(213, 220, 235, .76);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .72);
+  color: var(--wb-muted);
+  font-size: 0;
+  box-shadow: 0 7px 16px rgba(69, 80, 117, .08);
+}
+
+.cognition-board-pager-button span,
+.cognition-board-pager-button svg {
+  display: none;
+}
+
+.cognition-board-pager-button:first-of-type::before,
+.cognition-board-pager-button:last-of-type::after {
+  display: block;
+  width: 0;
+  height: 0;
+  content: "";
+  transition: transform .18s ease;
+}
+
+.cognition-board-pager-button:first-of-type::before {
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 8px solid currentColor;
+}
+
+.cognition-board-pager-button:last-of-type::after {
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 8px solid currentColor;
+}
+
+.cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(91, 91, 214, .28);
+  background: rgba(255, 255, 255, .94);
+  color: var(--wb-accent);
+}
+
+.cognition-board-pager-button:first-of-type:hover:not(:disabled)::before {
+  transform: translateX(-1px);
+}
+
+.cognition-board-pager-button:last-of-type:hover:not(:disabled)::after {
+  transform: translateX(1px);
+}
+
+.cognition-board-pager-status {
+  min-width: 170px;
+  gap: 5px;
+  padding: 0 12px;
+}
+
+.cognition-board-pager-status strong {
+  font-size: 16px;
+}
+
+.cognition-board-pager-status em {
+  max-width: 220px;
+  font-size: 12px;
+}
+
+.cognition-page--growth .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(185, 135, 67, .32);
+  color: #9b6729;
+}
+
+@media (max-width: 620px) {
+  .cognition-board-pager {
+    min-height: 38px;
+  }
+
+  .cognition-board-pager-button {
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .cognition-board-pager-button:first-of-type::before,
+  .cognition-board-pager-button:last-of-type::after {
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+  }
+
+  .cognition-board-pager-button:first-of-type::before {
+    border-right-width: 7px;
+  }
+
+  .cognition-board-pager-button:last-of-type::after {
+    border-left-width: 7px;
+  }
+
+  .cognition-board-pager-status {
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  .cognition-board-pager-status em {
+    max-width: 120px;
+  }
+}
+/* Pager anchored to cognition cards. */
+.cognition-feature-stage {
+  position: relative;
+  min-width: 0;
+  padding-top: 54px;
+}
+
+.cognition-feature-stage .cognition-board-pager {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 4;
+  display: flex;
+  height: 42px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.cognition-feature-stage .cognition-board-pager-button {
+  pointer-events: auto;
+}
+
+.cognition-feature-stage .cognition-board-pager-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cognition-feature-stage .cognition-feature-grid {
+  position: relative;
+}
+
+@media (max-width: 620px) {
+  .cognition-feature-stage {
+    padding-top: 48px;
+  }
+
+  .cognition-feature-stage .cognition-board-pager {
+    height: 36px;
+  }
+}
+/* Inline cognition pager: keep navigation controls on the category card edges. */
+.cognition-control-panel {
+  position: relative;
+  padding: 8px 48px;
+}
+
+.cognition-control-panel .cognition-category-strip {
+  min-height: 42px;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cognition-control-panel .cognition-category-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.cognition-control-panel .cognition-board-pager--inline {
+  position: absolute;
+  inset: 8px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-button {
+  pointer-events: auto;
+  min-width: 34px;
+  width: 34px;
+  height: 34px;
+  border-color: transparent;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 4px 12px rgba(69, 80, 117, .1);
+}
+
+.cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(91, 91, 214, .22);
+  background: var(--wb-accent-soft);
+}
+
+.cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-status {
+  display: none;
+}
+
+.cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-button:disabled {
+  opacity: .22;
+}
+
+.cognition-page--growth .cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(185, 135, 67, .26);
+  background: rgba(255, 246, 226, .8);
+  color: #9b6729;
+}
+
+@media (max-width: 620px) {
+  .cognition-control-panel {
+    padding-right: 44px;
+    padding-left: 44px;
+  }
+
+  .cognition-control-panel .cognition-board-pager--inline .cognition-board-pager-button {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}
+/* Side-mounted cognition pager: align with the content card edges. */
+.cognition-control-panel {
+  padding: 8px;
+}
+
+.cognition-feature-grid {
+  position: relative;
+}
+
+.cognition-feature-grid > .cognition-board-pager--sides {
+  position: absolute;
+  top: 50%;
+  right: -23px;
+  left: -23px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.cognition-feature-grid > .cognition-board-pager--sides .cognition-board-pager-button {
+  pointer-events: auto;
+  min-width: 42px;
+  width: 42px;
+  height: 42px;
+  border-color: rgba(213, 220, 235, .82);
+  background: rgba(255, 255, 255, .9);
+  box-shadow:
+    0 8px 20px rgba(53, 64, 105, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+
+.cognition-feature-grid > .cognition-board-pager--sides .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(91, 91, 214, .3);
+  background: var(--wb-accent-soft);
+  box-shadow:
+    0 10px 22px rgba(53, 64, 105, .18),
+    inset 0 1px 0 rgba(255, 255, 255, .96);
+}
+
+.cognition-feature-grid > .cognition-board-pager--sides .cognition-board-pager-button:focus-visible {
+  outline: 2px solid rgba(91, 91, 214, .42);
+  outline-offset: 3px;
+}
+
+.cognition-page--growth .cognition-feature-grid > .cognition-board-pager--sides .cognition-board-pager-button:hover:not(:disabled) {
+  border-color: rgba(185, 135, 67, .34);
+  background: rgba(255, 246, 226, .92);
+  color: #9b6729;
+}
+
+@media (max-width: 620px) {
+  .cognition-feature-grid > .cognition-board-pager--sides {
+    right: -14px;
+    left: -14px;
+  }
+
+  .cognition-feature-grid > .cognition-board-pager--sides .cognition-board-pager-button {
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+  }
+}

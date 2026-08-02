@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink } from 'lucide-react';
 import './cognition.css';
 
 type CategoryId = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'business' | 'technology' | 'medicine' | 'energy';
@@ -234,6 +234,15 @@ export default function DailyCognitionView() {
   const [category, setCategory] = useState<CategoryId>('digest');
   const board = useMemo(() => boards.find((item) => item.id === category) ?? boards[0], [category]);
   const activeModule = modules.find((item) => item.id === mode) ?? modules[0];
+  const categoryIndex = Math.max(0, boards.findIndex((item) => item.id === category));
+  const canGoPrevious = categoryIndex > 0;
+  const canGoNext = categoryIndex < boards.length - 1;
+
+  function moveCategory(offset: -1 | 1) {
+    const nextIndex = categoryIndex + offset;
+    if (nextIndex < 0 || nextIndex >= boards.length) return;
+    setCategory(boards[nextIndex].id);
+  }
   const cacheKey = `workbench:cognition:${mode}:${category}:v5`;
   const initialCache = readCache(cacheKey);
   const [items, setItems] = useState<CognitionItem[]>(initialCache?.items ?? []);
@@ -244,7 +253,6 @@ export default function DailyCognitionView() {
   const [reflection, setReflection] = useState(() => localStorage.getItem(reflectionKey) ?? '');
   const [reflectionHistory, setReflectionHistory] = useState<ReflectionEntry[]>(readReflectionHistory);
   const [feedback, setFeedback] = useState('');
-  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [relatedItemId, setRelatedItemId] = useState('');
   const [relatedPickerOpen, setRelatedPickerOpen] = useState(false);
 
@@ -289,12 +297,10 @@ export default function DailyCognitionView() {
     setRelatedItemId((current) => (
       items.some((item) => item.id === current) ? current : items[0]?.id ?? ''
     ));
-    setKnowledgeOpen(false);
     setRelatedPickerOpen(false);
   }, [items, mode, category]);
 
   const featured = items[0];
-  const boardDescription = mode === 'growth' ? board.growthDescription : board.description;
   const thinkingQuestion = mode === 'growth' ? board.growthQuestion : board.question;
   const feedLabel = mode === 'growth' ? '知识卡片' : '国内热点';
   const feedItems = items.slice(1, 6);
@@ -348,7 +354,6 @@ export default function DailyCognitionView() {
     <div className={`cognition-page cognition-page--${mode}`}>
       <section className="cognition-header">
         <div>
-          <span className="cognition-kicker">每日认知 · {activeModule.label}</span>
           <h2>{mode === 'growth' ? '每天真正学会一个概念、模型或方法。' : '掌握国内正在发生的热点，以及它为何值得关注。'}</h2>
           <p>
             {mode === 'growth'
@@ -364,9 +369,7 @@ export default function DailyCognitionView() {
         </div>
       </section>
 
-      <section className="cognition-control-panel">
-        <div className="cognition-control-top">
-          <nav className="cognition-module-tabs" aria-label="每日认知内容模块">
+      <nav className="cognition-module-tabs cognition-module-tabs--standalone" aria-label="每日认知内容模块">
             {modules.map((item) => (
               <button
                 type="button"
@@ -381,16 +384,9 @@ export default function DailyCognitionView() {
                 <strong>{item.label}</strong>
               </button>
             ))}
-          </nav>
-          <div className="cognition-current-board">
-            <span>{board.icon}</span>
-            <div>
-              <small>{activeModule.eyebrow} · 当前分类</small>
-              <strong>{board.id === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : board.label}</strong>
-              <p>{boardDescription}</p>
-            </div>
-          </div>
-        </div>
+      </nav>
+
+      <section className="cognition-control-panel">
         <nav className="cognition-category-strip" aria-label={`${activeModule.label}分类`}>
           {boards.map((item) => (
             <button
@@ -406,9 +402,38 @@ export default function DailyCognitionView() {
         </nav>
       </section>
 
+
+
       {error && <div className="cognition-alert">联网更新暂时失败，已保留上一次内容。{error}</div>}
 
+
+
       <section className="cognition-feature-grid">
+        <div className="cognition-board-pager cognition-board-pager--sides" aria-label="切换内容板块">
+          <button
+            type="button"
+            className="cognition-board-pager-button"
+            aria-label="上一个板块"
+            title="上一个板块"
+            onClick={() => moveCategory(-1)}
+            disabled={!canGoPrevious}
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>上一个板块</span>
+          </button>
+          <button
+            type="button"
+            className="cognition-board-pager-button"
+            aria-label="下一个板块"
+            title="下一个板块"
+            onClick={() => moveCategory(1)}
+            disabled={!canGoNext}
+          >
+            <span>下一个板块</span>
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+
         <article className="cognition-feature">
           {featured ? (
             <>
@@ -417,16 +442,8 @@ export default function DailyCognitionView() {
               <p>{featured.summary || '阅读完整内容，理解核心概念、适用场景与方法边界。'}</p>
               <div className="cognition-feature-actions">
                 <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '查看知识来源' : '阅读资讯原文'} <ExternalLink size={13} /></button>
-                <button
-                  type="button"
-                  className="knowledge-drawer-toggle"
-                  aria-expanded={knowledgeOpen}
-                  onClick={() => setKnowledgeOpen((open) => !open)}
-                >
-                  {knowledgeOpen ? '收起列表' : `展开 5 条${feedLabel}`} <span>{knowledgeOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</span>
-                </button>
               </div>
-              <div className={`knowledge-drawer ${knowledgeOpen ? 'open' : ''}`}>
+              <div className="knowledge-drawer open">
                 <div>
                   <header><strong>{feedLabel}</strong><small>点击条目阅读来源；写笔记时可在右侧选择关联</small></header>
                   <div className="knowledge-drawer-list">
@@ -447,7 +464,6 @@ export default function DailyCognitionView() {
         </article>
 
         <article className="cognition-question">
-          <span className="cognition-kicker">{mode === 'growth' ? '学习迁移卡' : '今日思考练习'}</span>
           <div className="cognition-relation">
             <button
               type="button"
@@ -495,7 +511,7 @@ export default function DailyCognitionView() {
             </button>
           </div>
         </article>
-      </section>
+        </section>
 
       <section className="cognition-output">
         <div className="cognition-output-head">

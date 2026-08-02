@@ -1,6 +1,7 @@
 import { app, BrowserWindow, nativeTheme } from 'electron';
 import path from 'node:path';
 import { registerContentIpc } from './content';
+import { registerStorageIpc } from './storage';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -31,6 +32,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerStorageIpc();
   registerContentIpc();
   createWindow();
 

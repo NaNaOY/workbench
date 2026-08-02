@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ExternalLink, GitFork, RefreshCw, Star } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink, GitFork, RefreshCw, Star } from 'lucide-react';
 import './knowledge.css';
 
 interface DailyItem {
@@ -169,7 +169,6 @@ export function DailyGrowthView() {
     <div className="knowledge-page">
       <section className="knowledge-heading">
         <div>
-          <span className="knowledge-kicker">每日认知</span>
           <h2>每天用十分钟，更新一次自己的思维模型。</h2>
           <p>精选中文深度内容，在输入之后留下一个属于你的判断。</p>
         </div>
@@ -247,7 +246,145 @@ export function GitHubRankingView() {
   const [fetchedAt, setFetchedAt] = useState(cached?.fetchedAt ?? '');
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState('');
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    maxScroll: number;
+    lastX: number;
+    lastTime: number;
+    velocity: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
+  const scrollAnimationRef = useRef<number | null>(null);
 
+  const stopScrollAnimation = useCallback((track?: HTMLDivElement | null) => {
+    if (scrollAnimationRef.current !== null) {
+      cancelAnimationFrame(scrollAnimationRef.current);
+      scrollAnimationRef.current = null;
+    }
+    track?.classList.remove('is-animating');
+  }, []);
+
+  const animateScrollTo = useCallback((track: HTMLDivElement, requestedTarget: number) => {
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const target = Math.max(0, Math.min(maxScroll, requestedTarget));
+    stopScrollAnimation(track);
+    if (Math.abs(target - track.scrollLeft) < 1) return;
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    track.scrollTo({ left: target, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+  }, [stopScrollAnimation]);
+
+  const getCardStride = useCallback((track: HTMLDivElement) => {
+    const card = track.querySelector<HTMLElement>('.repo-card');
+    if (!card) return track.clientWidth * .8;
+    const styles = window.getComputedStyle(track);
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+    return card.getBoundingClientRect().width + gap;
+  }, []);
+
+  const startInertia = useCallback((track: HTMLDivElement, initialVelocity: number) => {
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || Math.abs(initialVelocity) < 28) {
+      return;
+    }
+
+    stopScrollAnimation(track);
+    track.classList.add('is-animating');
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    let position = track.scrollLeft;
+    let velocity = initialVelocity;
+    let lastTime = performance.now();
+    const animate = (now: number) => {
+      const deltaTime = Math.min(.032, Math.max(.001, (now - lastTime) / 1000));
+      lastTime = now;
+      position += velocity * deltaTime;
+      if (position <= 0 || position >= maxScroll) {
+        position = Math.max(0, Math.min(maxScroll, position));
+        velocity *= -.28;
+      }
+      track.scrollLeft = position;
+      velocity *= Math.exp(-5.2 * deltaTime);
+      if (Math.abs(velocity) < 18) {
+        stopScrollAnimation(track);
+        return;
+      }
+      scrollAnimationRef.current = window.requestAnimationFrame(animate);
+    };
+    scrollAnimationRef.current = window.requestAnimationFrame(animate);
+  }, [stopScrollAnimation]);
+
+  const handleCarouselPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    const track = event.currentTarget;
+    stopScrollAnimation(track);
+    const now = performance.now();
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: track.scrollLeft,
+      maxScroll: Math.max(0, track.scrollWidth - track.clientWidth),
+      lastX: event.clientX,
+      lastTime: now,
+      velocity: 0,
+      moved: false,
+    };
+    track.setPointerCapture(event.pointerId);
+    track.classList.add('is-dragging');
+    event.preventDefault();
+  }, [stopScrollAnimation]);
+
+  const handleCarouselPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const now = performance.now();
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) > 4) drag.moved = true;
+    const elapsed = Math.max(1, now - drag.lastTime);
+    const instantVelocity = -((event.clientX - drag.lastX) / elapsed) * 1000;
+    drag.velocity = drag.velocity * .78 + instantVelocity * .22;
+    drag.lastX = event.clientX;
+    drag.lastTime = now;
+    event.currentTarget.scrollLeft = Math.max(0, Math.min(drag.maxScroll, drag.startScrollLeft - delta));
+  }, []);
+
+  const handleCarouselPointerEnd = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    suppressClickRef.current = drag.moved;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    event.currentTarget.classList.remove('is-dragging');
+    dragRef.current = null;
+    if (drag.moved) startInertia(event.currentTarget, drag.velocity);
+    if (suppressClickRef.current) {
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+    }
+  }, [startInertia]);
+
+  const handleCarouselClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClickRef.current = false;
+  }, []);
+
+  const scrollCarousel = useCallback((direction: -1 | 1) => {
+    const track = carouselRef.current;
+    if (!track) return;
+    const stride = getCardStride(track);
+    const currentIndex = Math.floor(track.scrollLeft / stride + .5);
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const target = Math.max(0, Math.min(maxScroll, (currentIndex + direction) * stride));
+    animateScrollTo(track, target);
+  }, [animateScrollTo, getCardStride]);
+
+  useEffect(() => () => stopScrollAnimation(carouselRef.current), [stopScrollAnimation]);
   const refresh = useCallback(async () => {
     const api = desktopApi();
     if (!api?.getGitHubRanking) {
@@ -284,7 +421,6 @@ export function GitHubRankingView() {
     <div className="knowledge-page">
       <section className="github-heading">
         <div>
-          <span className="knowledge-kicker">GitHub 干货榜单</span>
           <h2>发现值得学习、收藏和动手尝试的开源成果。</h2>
           <p>仓库名称和介绍保留原文；总榜按 Star 排序，周榜统计近 7 天新建仓库。</p>
         </div>
@@ -305,9 +441,24 @@ export function GitHubRankingView() {
 
       {error && <div className="content-alert">已保留上次榜单。{error}</div>}
 
-      <section className="repo-list">
-        {repositories.map((repo, index) => (
-          <article className={`repo-row rank-${index + 1}`} key={repo.id}>
+      <section className="repo-list repo-carousel" aria-label="GitHub ranking">
+        {repositories.length > 1 && (
+          <button type="button" className="repo-carousel-control previous" aria-label="Previous GitHub item" onClick={() => scrollCarousel(-1)}>
+            <ChevronLeft size={18} />
+          </button>
+        )}
+        <div
+          className="repo-carousel-track"
+          ref={carouselRef}
+          tabIndex={0}
+          onPointerDown={handleCarouselPointerDown}
+          onPointerMove={handleCarouselPointerMove}
+          onPointerUp={handleCarouselPointerEnd}
+          onPointerCancel={handleCarouselPointerEnd}
+          onClickCapture={handleCarouselClick}
+        >
+          {repositories.map((repo, index) => (
+            <article className={`repo-row repo-card rank-${index + 1}`} key={repo.id}>
             <div className="rank-number">{String(index + 1).padStart(2, '0')}</div>
             <img src={repo.avatar} alt="" />
             <div className="repo-copy">
@@ -321,7 +472,13 @@ export function GitHubRankingView() {
               <button type="button" onClick={() => openLink(repo.url)}>在 GitHub 查看 <ExternalLink size={13} /></button>
             </div>
           </article>
-        ))}
+          ))}
+        </div>
+        {repositories.length > 1 && (
+          <button type="button" className="repo-carousel-control next" aria-label="Next GitHub item" onClick={() => scrollCarousel(1)}>
+            <ChevronRight size={18} />
+          </button>
+        )}
         {!repositories.length && (
           <div className="ranking-empty">{loading ? '正在连接 GitHub，整理榜单…' : '当前筛选条件下暂无仓库。'}</div>
         )}

@@ -138,9 +138,18 @@ export default function App() {
   const [secondsLeft, setSecondsLeft] = useState(focusSeconds);
   const [isFocusing, setIsFocusing] = useState(false);
   const [focusTaskId, setFocusTaskId] = useState('');
+  const [storagePath, setStoragePath] = useState('');
+
+  const isDesktop = Boolean(window.desktop?.isDesktop);
+
+  useEffect(() => {
+    if (!window.desktop?.getStoragePath) return;
+    void window.desktop.getStoragePath().then(setStoragePath);
+  }, []);
 
   useEffect(() => {
     saveWorkspace(workspace);
+    window.desktop?.persistStorage?.();
   }, [workspace]);
 
   useEffect(() => {
@@ -408,8 +417,8 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="local-status"><span /> 本地优先 · 已保存</div>
-          <p>所有数据暂存于本机浏览器存储。</p>
+          <div className="local-status" title={storagePath || undefined}><span /> {isDesktop ? '本地文件 · 已保存' : '浏览器存储 · 已保存'}</div>
+          <p>{isDesktop ? '任务、笔记与内容缓存保存在本机文件，不受浏览器清理影响。' : '网页版本保存在当前浏览器；桌面版会写入本机文件。'}</p>
         </div>
       </aside>
 
@@ -515,7 +524,7 @@ function DashboardView({
         <div className="panel task-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">今日重点</span>
+
               <h2>今天的优先事项</h2>
             </div>
             <button type="button" className="text-button" onClick={onOpenTasks}>查看全部 <ArrowRight size={14} /></button>
@@ -541,7 +550,7 @@ function DashboardView({
         <div className="panel rhythm-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">本周节奏</span>
+
               <h2>保持你的节奏</h2>
             </div>
             <span className="tiny-badge">本周</span>
@@ -558,7 +567,7 @@ function DashboardView({
         <div className="panel notes-preview">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">灵感沉淀</span>
+
               <h2>最近记录</h2>
             </div>
             <button type="button" className="text-button" onClick={onOpenNotes}>全部笔记 <ArrowRight size={14} /></button>
@@ -576,7 +585,7 @@ function DashboardView({
 
         <div className="panel quick-panel">
           <img className="quick-brand-orbit" src={`${BASE_URL}assets/brand-orbit.jpg`} alt="" aria-hidden="true" />
-          <span className="eyebrow">快速开始</span>
+
           <h2>给现在一个方向</h2>
           <p>把注意力交给最重要的下一步，而不是更多的通知。</p>
           <button type="button" className="dark-button" onClick={onStartFocus}>进入 25 分钟专注 <ArrowRight size={16} /></button>
@@ -769,7 +778,7 @@ function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate, onUpda
   return (
     <div className="notes-layout">
       <aside className="notes-list-panel">
-        <div className="notes-list-head"><div><span className="eyebrow">全部笔记</span><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate} aria-label="新建笔记"><Plus size={17} /></button></div>
+        <div className="notes-list-head"><div><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate} aria-label="新建笔记"><Plus size={17} /></button></div>
         <div className="notes-list">
           {notes.map((note) => (
             <button type="button" key={note.id} className={`note-list-item ${selectedId === note.id ? 'selected' : ''}`} onClick={() => onSelect(note.id)}>
@@ -829,7 +838,7 @@ function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, foc
   return (
     <div className="focus-layout">
       <section className="focus-hero">
-        <span className="eyebrow">深度工作</span>
+
         <h2>给重要的事，一段完整的时间。</h2>
         <p>25 分钟内，暂时放下切换与干扰，只推进一件事。</p>
         <label className="focus-task-select">
