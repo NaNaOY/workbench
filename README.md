@@ -58,6 +58,32 @@ WorkBench 是一个本地优先的中文桌面工作台。它把任务、笔记�
 - 支持“开源项目”和“Agent Skills”两类。
 - 点击刷新会发起禁用缓存的新请求；短时间内榜单顺序相同属于正常情况，更新时间会变化。
 
+## 下载后能否运行？
+
+本仓库上传的是完整源码，克隆或下载 ZIP 后可以运行，但不能直接双击源码中的 index.html。桌面版依赖 Electron 主进程，因此首次运行需要：
+
+- Windows 10/11（当前一键脚本面向 Windows）；
+- Node.js 20 LTS（随 npm 一起安装）；
+- 首次安装依赖时可以访问 npm 镜像或网络。
+
+仓库会保留 package.json、package-lock.json、src/、electron/、public/、vite.config.ts 和启动脚本；node_modules/、dist/、dist-electron/ 和日志文件已被 .gitignore 排除，不建议把这些生成目录上传到 GitHub。
+
+下载后有两种方式：
+
+1. **Windows 一键启动**：解压项目后双击根目录的 start-workbench.cmd。脚本会在首次启动时执行 npm install，然后启动 Vite + Electron。
+2. **命令行启动**：在项目根目录执行 npm ci，再执行 npm run dev；如果只想启动已经构建好的版本，执行 npm run build 后再执行 npm start。
+
+项目现在提供 Windows 免环境分发包：WorkBench-Setup-0.1.0-x64.exe 是标准安装程序，WorkBench-Portable-0.1.0-x64.exe 是无需安装的便携版。用户不需要安装 Node.js 或 npm，直接运行其中一个 EXE 即可。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”提示；正式对外发布时建议使用代码签名证书。安装包应上传到 GitHub Releases，不要提交到源码仓库。
+
+### GitHub Pages 与桌面版的区别
+
+仓库已配置 GitHub Actions，推送到 master 后会构建并发布静态页面（默认地址为 https://NaNaOY.github.io/workbench/，具体以仓库 Pages 设置显示为准）。Pages 适合展示界面和使用浏览器本地缓存，但它没有 Electron 主进程，因此：
+
+- 任务、笔记、快捷入口和思考记录会保存在当前浏览器的 localStorage；
+- 每日资讯和 GitHub 榜单的联网更新、系统外链打开、桌面文件备份等能力需要使用桌面版；
+- 每个访问者的数据彼此隔离，不会写入 GitHub 仓库，也不会共享给其他人。
+
+桌面版会额外把本地存储备份到 Electron 的用户数据目录中的 workbench-storage.json。可以在工作台的本地存储提示中查看实际路径；该文件属于个人数据，不要提交到 GitHub。
 ## 快速启动
 
 ### 一键启动
@@ -82,6 +108,25 @@ npm run build
 npm start
 ```
 
+### 生成免环境 Windows 安装包
+
+安装包构建使用 Electron Builder，产物写入项目根目录的 release/（该目录已加入 .gitignore）：
+
+~~~powershell
+# 生成 NSIS 安装程序 + 便携版
+npm run package:win
+
+# 只生成便携版
+npm run package:portable
+~~~
+
+生成结果：
+
+- release/WorkBench-Setup-0.1.0-x64.exe：标准 Windows 安装程序，可创建桌面和开始菜单快捷方式；
+- release/WorkBench-Portable-0.1.0-x64.exe：绿色便携版，复制到其他 Windows 电脑后可直接运行；
+- release/win-unpacked/：未压缩的调试目录，不用于分发。
+
+首次构建可能需要联网下载 Electron Builder 的安装器组件；构建完成后的 EXE 不依赖 Node.js、npm 或项目源码。安装包中的本地数据仍按用户分别保存，不会上传到 GitHub。
 ## 开发与验证
 
 ```powershell

@@ -12,7 +12,9 @@
     "build:renderer": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "start": "electron .",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.electron.json --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "package:win": "npm run build && electron-builder --win",
+    "package:portable": "npm run build && electron-builder --config electron-builder.portable.json"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -27,8 +29,48 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "^31.2.1",
+    "electron-builder": "^24.13.3",
     "typescript": "^5.5.4",
     "vite": "^5.3.5",
     "wait-on": "^7.2.0"
-  }
+  },
+  "build": {
+    "appId": "com.nanoy.workbench",
+    "productName": "WorkBench",
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "public/assets"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/assets/workbench-icon.ico",
+      "publisherName": "NaNaOY",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WorkBench",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
+    },
+    "electronDist": "node_modules/electron/dist"
+  },
+  "author": "NaNaOY"
 }

@@ -1,0 +1,23 @@
+{
+  "extends": null,
+  "appId": "com.nanoy.workbench",
+  "productName": "WorkBench",
+  "asar": true,
+  "electronDist": "node_modules/electron/dist",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*",
+    "public/assets/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      "portable"
+    ],
+    "icon": "public/assets/workbench-icon.ico",
+    "signAndEditExecutable": false
+  }
+}
