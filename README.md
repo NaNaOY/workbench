@@ -74,21 +74,11 @@ npm run package:portable
 
 安装包不依赖 Node.js、npm 或项目源码。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”；正式分发时请使用自己的代码签名证书。安装包建议上传到 GitHub Releases，而不是提交到源码仓库。更多细节见 [桌面打包说明](./docs/packaging.md)。
 
-## GitHub Pages
-
-仓库包含 `.github/workflows/deploy.yml`，推送到 `master` 后会自动构建静态页面。Pages 适合展示和浏览器体验，但与桌面版有边界：
-
-- 浏览器版本没有 Electron 主进程，数据只保存在当前浏览器的 `localStorage`；
-- 桌面文件备份、系统浏览器打开外链等能力只在桌面版可用；
-- 每位访问者的数据彼此隔离，不会写入仓库，也不会同步给其他人。
-
-默认地址通常是 `https://NaNaOY.github.io/workbench/`（请以仓库 Settings → Pages 显示的地址为准）。
-
 ## 项目结构
 
 ```text
 personal-workbench/
-├─ .github/workflows/deploy.yml    # GitHub Pages 自动部署
+
 ├─ docs/
 │  ├─ packaging.md                 # Windows 免环境打包说明
 │  ├─ privacy.md                   # 隐私、本地存储和网络边界
