@@ -65,6 +65,13 @@ function isoToday() {
   return localDateKey();
 }
 
+const rhythmDayLabels = ['一', '二', '三', '四', '五', '六', '日'];
+
+function rhythmTodayIndex() {
+  const day = new Date().getDay();
+  return day === 0 ? 6 : day - 1;
+}
+
 function formatDate(value: string) {
   if (!value) return '未设日期';
   const date = new Date(`${value}T12:00:00`);
@@ -510,6 +517,7 @@ function DashboardView({
   const doneCount = tasks.filter((task) => task.status === 'done').length;
   const minutesLabel = focusMinutes >= 60 ? `${Math.floor(focusMinutes / 60)}h ${focusMinutes % 60}m` : `${focusMinutes}m`;
   const visibleTasks = [...overdue, ...dueToday.filter((task) => !overdue.some((late) => late.id === task.id))].slice(0, 4);
+  const todayRhythmIndex = rhythmTodayIndex();
 
   return (
     <div className="dashboard-stack">
@@ -557,9 +565,9 @@ function DashboardView({
           </div>
           <div className="rhythm-copy"><strong>别把一天排满。</strong><span>留出一段连续、不被打扰的时间，让重要的事情自然向前。</span></div>
           <div className="mini-bars" aria-label="本周专注趋势">
-            {[35, 54, 41, 78, 64, 48, 70].map((height, index) => <span key={index} style={{ height: `${height}%` }} className={index === 4 ? 'today-bar' : ''} />)}
+            {[35, 54, 41, 78, 64, 48, 70].map((height, index) => <span key={index} style={{ height: `${height}%` }} className={index === todayRhythmIndex ? 'today-bar' : ''} />)}
           </div>
-          <div className="days-row"><span>一</span><span>二</span><span>三</span><span>四</span><span className="today-day">五</span><span>六</span><span>日</span></div>
+          <div className="days-row">{rhythmDayLabels.map((label, index) => <span key={label} className={index === todayRhythmIndex ? 'today-day' : ''}>{label}</span>)}</div>
         </div>
       </section>
 

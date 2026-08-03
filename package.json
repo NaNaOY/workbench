@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "description": "A local-first desktop personal workbench",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NaNaOY/workbench.git"
+  },
+  "homepage": "https://NaNaOY.github.io/workbench/",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",

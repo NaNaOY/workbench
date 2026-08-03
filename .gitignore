@@ -1,6 +1,21 @@
-node_modules
-dist
-dist-electron
-.vite
+# Dependencies
+node_modules/
+
+# Build output
+/dist/
+/dist-electron/
+/release/
+.vite/
+.vite-preview.*
+
+# Local runtime data and secrets
+.env
+.env.*
+!.env.example
+workbench-storage.json
+*.local.json
+
+# Logs and OS files
 *.log
-release
+.DS_Store
+Thumbs.db
