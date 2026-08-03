@@ -68,6 +68,11 @@ contextBridge.exposeInMainWorld('desktop', {
   persistStorage: queueStorageSync,
   getStoragePath: () => ipcRenderer.invoke('storage:get-path'),
   getDailyContent: (category?: string, mode?: 'current' | 'growth', force?: boolean) => ipcRenderer.invoke('content:get-daily', category, mode, force),
+  onDailyUpdated: (listener: () => void) => {
+    const handler = () => listener();
+    ipcRenderer.on('content:daily-updated', handler);
+    return () => ipcRenderer.removeListener('content:daily-updated', handler);
+  },
   getGitHubRanking: (request: { category: 'projects' | 'skills'; period: 'all' | 'week' }) =>
     ipcRenderer.invoke('content:get-github', request),
   openExternal: (url: string) => ipcRenderer.invoke('content:open-external', url),

@@ -69,8 +69,8 @@ npm run package:portable
 
 生成结果：
 
-- `release/WorkBench-Setup-0.1.0-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
-- `release/WorkBench-Portable-0.1.0-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
+- `release/WorkBench-Setup-0.1.1-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
+- `release/WorkBench-Portable-0.1.1-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
 
 安装包不依赖 Node.js、npm 或项目源码。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”；正式分发时请使用自己的代码签名证书。安装包建议上传到 GitHub Releases，而不是提交到源码仓库。更多细节见 [桌面打包说明](./docs/packaging.md)。
 
@@ -132,4 +132,4 @@ npm run build
 
 ## 当前版本
 
-`0.1.0`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。
+`0.1.1`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。
