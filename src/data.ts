@@ -1,6 +1,7 @@
 import { Bookmark, Note, Task, WorkspaceData } from './types';
+import { readStoredText, writeStoredJson, STORAGE_KEYS } from './storage';
 
-export const STORAGE_KEY = 'workbench:data:v1';
+export const STORAGE_KEY = STORAGE_KEYS.workspace;
 
 export function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -50,7 +51,7 @@ export const seedWorkspace: WorkspaceData = {
 
 export function loadWorkspace(): WorkspaceData {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = readStoredText(STORAGE_KEY);
     if (!saved) return seedWorkspace;
     const parsed = JSON.parse(saved) as Partial<WorkspaceData>;
     if (!Array.isArray(parsed.tasks) || !Array.isArray(parsed.notes) || !Array.isArray(parsed.bookmarks)) return seedWorkspace;
@@ -70,7 +71,7 @@ export function loadWorkspace(): WorkspaceData {
 }
 
 export function saveWorkspace(data: WorkspaceData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  writeStoredJson(STORAGE_KEY, data);
 }
 
 export function createId(prefix: string) {

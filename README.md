@@ -69,8 +69,8 @@ npm run package:portable
 
 生成结果：
 
-- `release/WorkBench-Setup-0.1.2-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
-- `release/WorkBench-Portable-0.1.2-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
+- `release/WorkBench-Setup-0.1.3-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
+- `release/WorkBench-Portable-0.1.3-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
 
 安装包不依赖 Node.js、npm 或项目源码。
 
@@ -94,13 +94,16 @@ personal-workbench/
 │  ├─ storage.ts                   # 用户数据备份到 Electron userData
 │  ├─ content.ts                   # 更新调度、GitHub 请求、外链打开
 │  ├─ cognition.ts                 # 每日资讯查询和筛选
+│  ├─ feed.ts                      # 共享 RSS / XML 解析工具
 │  └─ learning.ts                  # 认知提升知识卡内容库
 ├─ public/assets/                  # 应用图标、Logo 和公开界面素材
 ├─ src/
-│  ├─ App.tsx                      # 工作台主界面
+│  ├─ App.tsx                      # 工作台主壳与全局状态
+│  ├─ AppViews.tsx                 # 仪表盘、任务、笔记等视图
 │  ├─ DailyCognitionView.tsx       # 每日资讯 / 认知提升
 │  ├─ KnowledgeViews.tsx           # GitHub 干货榜
-│  ├─ data.ts                      # Web 本地存储读写
+│  ├─ data.ts                      # 工作区数据模型
+│  ├─ storage.ts                   # 统一本地存储读写
 │  ├─ types.ts                     # 共享类型
 │  └─ *.css                        # 页面和视觉主题
 ├─ electron-builder.portable.json # 便携版构建配置
@@ -136,4 +139,4 @@ npm run build
 
 ## 当前版本
 
-`0.1.2`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。
+`0.1.3`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。

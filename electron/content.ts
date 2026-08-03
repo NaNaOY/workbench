@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain, net, Notification, shell } from 'electron';
 import { CognitionCategoryId, CognitionMode, fetchCognitionContent } from './cognition';
+import { parseFeed } from './feed';
 
 interface FeedSource {
   name: string;
@@ -17,7 +18,7 @@ const feedSources: FeedSource[] = [
 ];
 
 const requestHeaders = {
-  'User-Agent': 'WorkBench-Desktop/0.1.1',
+  'User-Agent': 'WorkBench-Desktop/0.1.3',
   Accept: 'application/xml,text/xml,application/atom+xml,application/rss+xml,text/html;q=0.8,*/*;q=0.5',
 };
 
@@ -31,59 +32,6 @@ async function fetchWithTimeout(url: string, headers: Record<string, string> = r
   } finally {
     clearTimeout(timer);
   }
-}
-
-function decodeXml(value: string) {
-  return value
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([\da-f]+);/gi, (_match, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&amp;/gi, '&')
-    .replace(/&nbsp;|&#160;|&#x0*a0;/gi, ' ')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'");
-}
-
-function cleanText(value: string) {
-  return decodeXml(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function getTag(block: string, name: string) {
-  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i'));
-  return match ? cleanText(match[1]) : '';
-}
-
-function getLink(block: string) {
-  const atomLink = block.match(/<link[^>]+href=["']([^"']+)["']/i);
-  if (atomLink) return decodeXml(atomLink[1].trim());
-  return getTag(block, 'link');
-}
-
-function parseFeed(xml: string, source: FeedSource) {
-  const blocks = xml.match(/<(?:item|entry)(?:\s[^>]*)?>[\s\S]*?<\/(?:item|entry)>/gi) ?? [];
-  return blocks
-    .map((block, index) => {
-      const title = getTag(block, 'title');
-      const url = getLink(block);
-      const summary = getTag(block, 'description') || getTag(block, 'summary') || getTag(block, 'content');
-      const publishedAt = getTag(block, 'pubDate') || getTag(block, 'published') || getTag(block, 'updated');
-      return {
-        id: `${source.name}-${index}-${url || title}`,
-        title,
-        url,
-        summary: summary.slice(0, 220),
-        source: source.name,
-        publishedAt,
-      };
-    })
-    .filter((item) => item.title && item.url);
 }
 
 async function fetchDailyContent() {
@@ -133,7 +81,7 @@ async function fetchGitHubRanking(request: GitHubRankingRequest) {
   const response = await fetchWithTimeout(
     `https://api.github.com/search/repositories?${params.toString()}`,
     {
-      'User-Agent': 'WorkBench-Desktop/0.1.1',
+      'User-Agent': 'WorkBench-Desktop/0.1.3',
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },

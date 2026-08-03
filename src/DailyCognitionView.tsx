@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { readStoredJson, readStoredText, writeStoredJson, writeStoredText, STORAGE_KEYS } from './storage';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink } from 'lucide-react';
 import './cognition.css';
 
-type CategoryId = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'business' | 'technology' | 'medicine' | 'energy';
+type CategoryId = DesktopCognitionCategory;
 type CognitionMode = 'current' | 'growth';
 
 interface Board {
@@ -48,13 +49,7 @@ interface ReflectionEntry {
   relatedSource?: string;
 }
 
-const reflectionHistoryKey = 'workbench:cognition-outputs:v1';
-
-interface DesktopCognitionApi {
-  getDailyContent: (category?: CategoryId, mode?: CognitionMode, force?: boolean) => Promise<CognitionResponse>;
-  onDailyUpdated?: (listener: () => void) => () => void;
-  openExternal: (url: string) => Promise<boolean>;
-}
+const reflectionHistoryKey = STORAGE_KEYS.cognitionReflectionHistory;
 
 const modules: Array<{
   id: CognitionMode;
@@ -206,26 +201,16 @@ function cacheNeedsDailyRefresh(cache: CognitionResponse | null) {
   return !Number.isFinite(fetchedAt) || fetchedAt < dailyRefreshBoundary().getTime();
 }
 function api() {
-  return window.desktop as typeof window.desktop & DesktopCognitionApi | undefined;
+  return window.desktop;
 }
 
 function readCache(key: string) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as CognitionResponse & { date: string }) : null;
-  } catch {
-    return null;
-  }
+  return readStoredJson<CognitionResponse & { date: string }>(key);
 }
 
 function readReflectionHistory() {
-  try {
-    const raw = localStorage.getItem(reflectionHistoryKey);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed as ReflectionEntry[] : [];
-  } catch {
-    return [];
-  }
+  const parsed = readStoredJson<ReflectionEntry[]>(reflectionHistoryKey);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function formatTime(value: string) {
@@ -260,14 +245,14 @@ export default function DailyCognitionView() {
     if (nextIndex < 0 || nextIndex >= boards.length) return;
     setCategory(boards[nextIndex].id);
   }
-  const cacheKey = `workbench:cognition:${mode}:${category}:v5`;
+  const cacheKey = STORAGE_KEYS.cognitionCache(mode, category);
   const initialCache = readCache(cacheKey);
   const [items, setItems] = useState<CognitionItem[]>(initialCache?.items ?? []);
   const [fetchedAt, setFetchedAt] = useState(initialCache?.fetchedAt ?? '');
   const [loading, setLoading] = useState(() => cacheNeedsDailyRefresh(initialCache));
   const [error, setError] = useState('');
-  const reflectionKey = `workbench:cognition-reflection:${mode}:${category}:${dateKey()}`;
-  const [reflection, setReflection] = useState(() => localStorage.getItem(reflectionKey) ?? '');
+  const reflectionKey = STORAGE_KEYS.cognitionReflection(mode, category, dateKey());
+  const [reflection, setReflection] = useState(() => readStoredText(reflectionKey));
   const [reflectionHistory, setReflectionHistory] = useState<ReflectionEntry[]>(readReflectionHistory);
   const [feedback, setFeedback] = useState('');
   const [relatedItemId, setRelatedItemId] = useState('');
@@ -284,7 +269,7 @@ export default function DailyCognitionView() {
     setFeedback('');
     try {
       const response = await desktop.getDailyContent(category, mode, true);
-      localStorage.setItem(cacheKey, JSON.stringify({ ...response, date: dateKey() }));
+      writeStoredJson(cacheKey, { ...response, date: dateKey() });
       setItems(response.items);
       setFetchedAt(response.fetchedAt);
       if (!silent) setFeedback('已更新本板块');
@@ -307,7 +292,7 @@ export default function DailyCognitionView() {
       setLoading(true);
       void refresh(true);
     }
-    setReflection(localStorage.getItem(reflectionKey) ?? '');
+    setReflection(readStoredText(reflectionKey));
     setFeedback('');
   }, [cacheKey, reflectionKey, refresh]);
 
@@ -362,14 +347,14 @@ export default function DailyCognitionView() {
       relatedSource: relatedItem?.source,
     };
     const next = [entry, ...reflectionHistory].slice(0, 100);
-    localStorage.setItem(reflectionHistoryKey, JSON.stringify(next));
+    writeStoredJson(reflectionHistoryKey, next);
     setReflectionHistory(next);
     setFeedback('已保存到“我的认知产出”');
   }
 
   function deleteReflection(id: string) {
     const next = reflectionHistory.filter((entry) => entry.id !== id);
-    localStorage.setItem(reflectionHistoryKey, JSON.stringify(next));
+    writeStoredJson(reflectionHistoryKey, next);
     setReflectionHistory(next);
     setFeedback('已删除这条认知产出');
   }
@@ -535,7 +520,7 @@ export default function DailyCognitionView() {
             value={reflection}
             onChange={(event) => {
               setReflection(event.target.value);
-              localStorage.setItem(reflectionKey, event.target.value);
+              writeStoredText(reflectionKey, event.target.value);
             }}
             placeholder={mode === 'growth' ? '写下核心概念、适用场景和你准备练习的方法…' : '写下事实、判断依据和仍不确定的部分…'}
           />

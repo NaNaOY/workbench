@@ -1,20 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, GitFork, RefreshCw, Star } from 'lucide-react';
 import './knowledge.css';
-
-interface DailyItem {
-  id: string;
-  title: string;
-  url: string;
-  summary: string;
-  source: string;
-  publishedAt: string;
-}
-
-interface DailyResponse {
-  items: DailyItem[];
-  fetchedAt: string;
-}
+import { readStoredJson, writeStoredJson, STORAGE_KEYS } from './storage';
 
 interface Repository {
   id: number;
@@ -35,67 +22,9 @@ interface RankingResponse {
   scope: string;
 }
 
-interface DesktopContentApi {
-  getDailyContent: () => Promise<DailyResponse>;
-  getGitHubRanking: (request: { category: 'projects' | 'skills'; period: 'all' | 'week' }) => Promise<RankingResponse>;
-  openExternal: (url: string) => Promise<boolean>;
-  notify: (title: string, body: string) => void;
-}
-
-interface CachedDaily extends DailyResponse {
-  date: string;
-}
-
-const dailyCacheKey = 'workbench:daily-content:v1';
-const reflectionKey = `workbench:reflection:${localDateKey()}`;
-const questions = [
-  '今天有什么观点，是你一直默认正确、却从未认真验证过的？',
-  '如果把当前最重要的问题重新定义一次，会得到什么不同答案？',
-  '最近哪条信息改变了你的判断？改变发生在什么地方？',
-  '今天做的事情里，哪些是重要但不紧急的长期积累？',
-  '如果只能保留一个行动来推进目标，你会保留哪一个？',
-  '你是否把别人的结论误当成了自己的思考？',
-  '本周有什么判断可以通过一个小实验快速验证？',
-];
-
 function desktopApi() {
-  return window.desktop as typeof window.desktop & DesktopContentApi | undefined;
+  return window.desktop;
 }
-
-function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function isAfterEight(date = new Date()) {
-  return date.getHours() >= 8;
-}
-
-function millisecondsUntilNextEight() {
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(8, 0, 0, 0);
-  if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
-  return next.getTime() - now.getTime();
-}
-
-function readJson<T>(key: string): T | null {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '最近更新';
-  return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric' }).format(date);
-}
-
 function formatUpdateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '尚未更新';
@@ -111,126 +40,6 @@ function openLink(url: string) {
   }
 }
 
-export function DailyGrowthView() {
-  const cached = readJson<CachedDaily>(dailyCacheKey);
-  const [items, setItems] = useState<DailyItem[]>(cached?.items ?? []);
-  const [fetchedAt, setFetchedAt] = useState(cached?.fetchedAt ?? '');
-  const [loading, setLoading] = useState(!cached);
-  const [error, setError] = useState('');
-  const [reflection, setReflection] = useState(() => localStorage.getItem(reflectionKey) ?? '');
-  const question = questions[Math.floor(Date.now() / 86_400_000) % questions.length];
-
-  const refresh = useCallback(async (showLoading = true) => {
-    const api = desktopApi();
-    if (!api?.getDailyContent) {
-      setError('当前环境不支持联网更新，请使用桌面版启动。');
-      return null;
-    }
-    if (showLoading) setLoading(true);
-    setError('');
-    try {
-      const response = await api.getDailyContent();
-      const cache: CachedDaily = { ...response, date: localDateKey() };
-      localStorage.setItem(dailyCacheKey, JSON.stringify(cache));
-      setItems(response.items);
-      setFetchedAt(response.fetchedAt);
-      return response;
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '内容更新失败，请稍后重试。');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const currentCache = readJson<CachedDaily>(dailyCacheKey);
-    if (!currentCache || (isAfterEight() && currentCache.date !== localDateKey())) {
-      void refresh(!currentCache);
-    } else {
-      setLoading(false);
-    }
-
-    let timer = 0;
-    const schedule = () => {
-      timer = window.setTimeout(async () => {
-        await refresh(false);
-        schedule();
-      }, millisecondsUntilNextEight());
-    };
-    schedule();
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
-
-  const featured = items[0];
-  const remaining = items.slice(1, 7);
-
-  return (
-    <div className="knowledge-page">
-      <section className="knowledge-heading">
-        <div>
-          <h2>每天用十分钟，更新一次自己的思维模型。</h2>
-          <p>精选中文深度内容，在输入之后留下一个属于你的判断。</p>
-        </div>
-        <div className="update-box">
-          <span><i /> 每日 08:00 自动更新</span>
-          <small>{fetchedAt ? `上次更新：${formatUpdateTime(fetchedAt)}` : '等待首次更新'}</small>
-          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在更新…' : '立即更新'}</button>
-        </div>
-      </section>
-
-      {error && <div className="content-alert">暂时无法联网更新，已保留上次内容。{error}</div>}
-
-      <section className="cognition-grid">
-        <article className="thinking-card">
-          <span className="card-label">今日问题</span>
-          <strong>{question}</strong>
-          <textarea
-            value={reflection}
-            onChange={(event) => {
-              setReflection(event.target.value);
-              localStorage.setItem(reflectionKey, event.target.value);
-            }}
-            placeholder="写下此刻的想法，不必追求完整…"
-          />
-          <small>内容自动保存在本机</small>
-        </article>
-
-        {featured ? (
-          <article className="featured-reading">
-            <div className="reading-meta"><span>{featured.source}</span><small>{formatDate(featured.publishedAt)}</small></div>
-            <h3>{featured.title}</h3>
-            <p>{featured.summary || '点击阅读原文，了解完整内容。'}</p>
-            <button type="button" onClick={() => openLink(featured.url)}>阅读今日精选 <span>→</span></button>
-          </article>
-        ) : (
-          <article className="featured-reading loading-reading">
-            <div className="reading-placeholder" />
-            <div className="reading-placeholder short" />
-            <p>{loading ? '正在从中文内容源获取今日精选…' : '暂时没有可展示的内容。'}</p>
-          </article>
-        )}
-      </section>
-
-      <section className="reading-section">
-        <div className="section-title-row">
-          <div><span className="knowledge-kicker">今日延伸阅读</span><h2>值得多想一步</h2></div>
-          <span className="source-note">来源：科技爱好者周刊 · 少数派</span>
-        </div>
-        <div className="reading-list">
-          {remaining.map((item, index) => (
-            <button type="button" className="reading-row" key={item.id} onClick={() => openLink(item.url)}>
-              <span className="reading-index">{String(index + 2).padStart(2, '0')}</span>
-              <span className="reading-copy"><strong>{item.title}</strong><small>{item.source} · {formatDate(item.publishedAt)}</small></span>
-              <span className="reading-arrow"><ExternalLink size={14} /></span>
-            </button>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function formatCount(value: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
@@ -240,8 +49,8 @@ function formatCount(value: number) {
 export function GitHubRankingView() {
   const [category, setCategory] = useState<'projects' | 'skills'>('projects');
   const [period, setPeriod] = useState<'all' | 'week'>('week');
-  const cacheKey = useMemo(() => `workbench:github:${category}:${period}:v1`, [category, period]);
-  const cached = readJson<RankingResponse>(cacheKey);
+  const cacheKey = useMemo(() => STORAGE_KEYS.githubRanking(category, period), [category, period]);
+  const cached = readStoredJson<RankingResponse>(cacheKey);
   const [repositories, setRepositories] = useState<Repository[]>(cached?.repositories ?? []);
   const [fetchedAt, setFetchedAt] = useState(cached?.fetchedAt ?? '');
   const [loading, setLoading] = useState(!cached);
@@ -395,7 +204,7 @@ export function GitHubRankingView() {
     setError('');
     try {
       const response = await api.getGitHubRanking({ category, period });
-      localStorage.setItem(cacheKey, JSON.stringify(response));
+      writeStoredJson(cacheKey, response);
       setRepositories(response.repositories);
       setFetchedAt(response.fetchedAt);
     } catch (reason) {
@@ -406,7 +215,7 @@ export function GitHubRankingView() {
   }, [cacheKey, category, period]);
 
   useEffect(() => {
-    const nextCache = readJson<RankingResponse>(cacheKey);
+    const nextCache = readStoredJson<RankingResponse>(cacheKey);
     if (nextCache) {
       setRepositories(nextCache.repositories);
       setFetchedAt(nextCache.fetchedAt);
