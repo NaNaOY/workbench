@@ -1,4 +1,4 @@
-import { ipcMain, net, Notification, shell } from 'electron';
+import { BrowserWindow, ipcMain, net, Notification, shell } from 'electron';
 import { CognitionCategoryId, CognitionMode, fetchCognitionContent } from './cognition';
 
 interface FeedSource {
@@ -17,7 +17,7 @@ const feedSources: FeedSource[] = [
 ];
 
 const requestHeaders = {
-  'User-Agent': 'WorkBench-Desktop/0.1',
+  'User-Agent': 'WorkBench-Desktop/0.1.1',
   Accept: 'application/xml,text/xml,application/atom+xml,application/rss+xml,text/html;q=0.8,*/*;q=0.5',
 };
 
@@ -133,7 +133,7 @@ async function fetchGitHubRanking(request: GitHubRankingRequest) {
   const response = await fetchWithTimeout(
     `https://api.github.com/search/repositories?${params.toString()}`,
     {
-      'User-Agent': 'WorkBench-Desktop/0.1',
+      'User-Agent': 'WorkBench-Desktop/0.1.1',
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },
@@ -208,10 +208,15 @@ async function refreshDailyCache(mode: CognitionMode, showNotification: boolean,
 
 function scheduleDailyRefresh() {
   const timer = setTimeout(async () => {
-    await Promise.allSettled([
+    const results = await Promise.allSettled([
       refreshDailyCache('current', true),
       refreshDailyCache('growth', false),
     ]);
+    if (results.some((result) => result.status === 'fulfilled')) {
+      BrowserWindow.getAllWindows().forEach((window) => {
+        if (!window.isDestroyed()) window.webContents.send('content:daily-updated');
+      });
+    }
     scheduleDailyRefresh();
   }, millisecondsUntilNextEight());
   timer.unref();

@@ -6,5 +6,6 @@ interface Window {
     platform: string;
     persistStorage?: () => void;
     getStoragePath?: () => Promise<string>;
+    onDailyUpdated?: (listener: () => void) => () => void;
   };
 }

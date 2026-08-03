@@ -52,6 +52,7 @@ const reflectionHistoryKey = 'workbench:cognition-outputs:v1';
 
 interface DesktopCognitionApi {
   getDailyContent: (category?: CategoryId, mode?: CognitionMode, force?: boolean) => Promise<CognitionResponse>;
+  onDailyUpdated?: (listener: () => void) => () => void;
   openExternal: (url: string) => Promise<boolean>;
 }
 
@@ -188,6 +189,22 @@ function dateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function dailyRefreshBoundary(date = new Date()) {
+  const boundary = new Date(date);
+  boundary.setHours(8, 0, 0, 0);
+  if (date.getTime() < boundary.getTime()) boundary.setDate(boundary.getDate() - 1);
+  return boundary;
+}
+
+function dailyRefreshBoundaryKey() {
+  return dateKey(dailyRefreshBoundary());
+}
+
+function cacheNeedsDailyRefresh(cache: CognitionResponse | null) {
+  if (!cache) return true;
+  const fetchedAt = new Date(cache.fetchedAt).getTime();
+  return !Number.isFinite(fetchedAt) || fetchedAt < dailyRefreshBoundary().getTime();
+}
 function api() {
   return window.desktop as typeof window.desktop & DesktopCognitionApi | undefined;
 }
@@ -247,7 +264,7 @@ export default function DailyCognitionView() {
   const initialCache = readCache(cacheKey);
   const [items, setItems] = useState<CognitionItem[]>(initialCache?.items ?? []);
   const [fetchedAt, setFetchedAt] = useState(initialCache?.fetchedAt ?? '');
-  const [loading, setLoading] = useState(!initialCache);
+  const [loading, setLoading] = useState(() => cacheNeedsDailyRefresh(initialCache));
   const [error, setError] = useState('');
   const reflectionKey = `workbench:cognition-reflection:${mode}:${category}:${dateKey()}`;
   const [reflection, setReflection] = useState(() => localStorage.getItem(reflectionKey) ?? '');
@@ -256,7 +273,7 @@ export default function DailyCognitionView() {
   const [relatedItemId, setRelatedItemId] = useState('');
   const [relatedPickerOpen, setRelatedPickerOpen] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (silent = false) => {
     const desktop = api();
     if (!desktop?.getDailyContent) {
       setError('当前环境无法联网，请通过桌面快捷方式启动。');
@@ -270,7 +287,7 @@ export default function DailyCognitionView() {
       localStorage.setItem(cacheKey, JSON.stringify({ ...response, date: dateKey() }));
       setItems(response.items);
       setFetchedAt(response.fetchedAt);
-      setFeedback('已更新本板块');
+      if (!silent) setFeedback('已更新本板块');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '内容获取失败，请稍后重试。');
     } finally {
@@ -280,18 +297,36 @@ export default function DailyCognitionView() {
 
   useEffect(() => {
     const cached = readCache(cacheKey);
-    if (cached) {
+    if (cached && !cacheNeedsDailyRefresh(cached)) {
       setItems(cached.items);
       setFetchedAt(cached.fetchedAt);
       setLoading(false);
     } else {
-      setItems([]);
-      setFetchedAt('');
-      void refresh();
+      setItems(cached?.items ?? []);
+      setFetchedAt(cached?.fetchedAt ?? '');
+      setLoading(true);
+      void refresh(true);
     }
     setReflection(localStorage.getItem(reflectionKey) ?? '');
     setFeedback('');
   }, [cacheKey, reflectionKey, refresh]);
+
+  useEffect(() => {
+    const desktop = api();
+    let boundaryKey = dailyRefreshBoundaryKey();
+    const refreshAtBoundary = () => {
+      const nextBoundaryKey = dailyRefreshBoundaryKey();
+      if (nextBoundaryKey === boundaryKey) return;
+      boundaryKey = nextBoundaryKey;
+      void refresh(true);
+    };
+    const unsubscribe = desktop?.onDailyUpdated?.(refreshAtBoundary);
+    const timer = window.setInterval(refreshAtBoundary, 30_000);
+    return () => {
+      unsubscribe?.();
+      window.clearInterval(timer);
+    };
+  }, [refresh]);
 
   useEffect(() => {
     setRelatedItemId((current) => (
