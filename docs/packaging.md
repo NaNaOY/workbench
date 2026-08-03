@@ -22,8 +22,8 @@ npm run package:portable
 
 产物写入 `release/`，该目录已被 `.gitignore` 排除：
 
-- `WorkBench-Setup-0.1.2-x64.exe`：标准安装程序；
-- `WorkBench-Portable-0.1.2-x64.exe`：绿色便携版；
+- `WorkBench-Setup-0.1.3-x64.exe`：标准安装程序；
+- `WorkBench-Portable-0.1.3-x64.exe`：绿色便携版；
 - `win-unpacked/`：本地调试目录，不用于分发。
 
 ## 升级与卸载

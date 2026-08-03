@@ -1,4 +1,5 @@
 import { net } from 'electron';
+import { parseFeed, type ParsedFeedItem as FeedItem } from './feed';
 import { getLearningContent, type LearningCategoryId } from './learning';
 
 export type CognitionCategoryId = 'digest' | LearningCategoryId;
@@ -14,15 +15,6 @@ interface CognitionBoard {
   label: string;
   feeds: DomesticFeed[];
   keywords: RegExp;
-}
-
-interface FeedItem {
-  id: string;
-  title: string;
-  url: string;
-  summary: string;
-  source: string;
-  publishedAt: string;
 }
 
 const feeds = {
@@ -130,40 +122,13 @@ const blockedPatterns = [
 ];
 
 const headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.1.1',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.1.3',
   Accept: 'application/rss+xml,application/xml,text/xml,*/*;q=0.6',
   'Cache-Control': 'no-cache',
 };
 
 const feedCache = new Map<string, { expiresAt: number; items: FeedItem[] }>();
 const feedCacheDuration = 5 * 60 * 1000;
-
-function decodeXml(value: string) {
-  return value
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([\da-f]+);/gi, (_match, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&amp;/gi, '&')
-    .replace(/&nbsp;|&#160;|&#x0*a0;/gi, ' ')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'");
-}
-
-function cleanText(value: string) {
-  return decodeXml(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function getTag(block: string, name: string) {
-  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i'));
-  return match ? cleanText(match[1]) : '';
-}
 
 function safeHttpUrl(value: string) {
   try {
@@ -172,24 +137,6 @@ function safeHttpUrl(value: string) {
   } catch {
     return '';
   }
-}
-
-function parseFeed(xml: string, feed: DomesticFeed) {
-  const blocks = xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi) ?? [];
-  return blocks.map((block, index) => {
-    const title = getTag(block, 'title').replace(/\s+[-_—|]\s*(新华网|人民网|中国新闻网|36氪)$/i, '').trim();
-    const url = safeHttpUrl(getTag(block, 'link') || getTag(block, 'guid'));
-    const summary = getTag(block, 'description') || getTag(block, 'content:encoded');
-    const publishedAt = getTag(block, 'pubDate') || getTag(block, 'dc:date') || getTag(block, 'date');
-    return {
-      id: `${feed.name}-${index}-${url || title}`,
-      title,
-      url,
-      summary: summary.slice(0, 320),
-      source: feed.name,
-      publishedAt,
-    };
-  }).filter((item) => item.title && item.url);
 }
 
 async function requestFeed(feed: DomesticFeed, bypassCache: boolean) {
@@ -205,7 +152,15 @@ async function requestFeed(feed: DomesticFeed, bypassCache: boolean) {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error(`${feed.name} HTTP ${response.status}`);
-    const items = parseFeed(await response.text(), feed);
+    const items = parseFeed(await response.text(), feed, {
+      includeEntries: false,
+      linkTags: ['link', 'guid'],
+      summaryTags: ['description', 'content:encoded'],
+      publishedTags: ['pubDate', 'dc:date', 'date'],
+      summaryLength: 320,
+      normalizeTitle: (title) => title.replace(/\s+[-_—|]\s*(新华网|人民网|中国新闻网|36氪)$/i, '').trim(),
+      normalizeUrl: safeHttpUrl,
+    });
     if (!items.length) throw new Error(`${feed.name} 暂无可解析内容`);
     feedCache.set(feed.url, { expiresAt: Date.now() + feedCacheDuration, items });
     return items;
