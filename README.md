@@ -1,230 +1,135 @@
 # WorkBench 个人工作台
 
-WorkBench 是一个本地优先的中文桌面工作台。它把任务、笔记、专注计时、快捷入口、每日认知和 GitHub 干货榜放在同一个 Electron 应用中；个人工作数据保存在本机浏览器存储，不需要账号或云端数据库。
+WorkBench 是一个本地优先的中文个人工作台，把任务、笔记、专注计时、快捷入口、每日资讯、认知提升和 GitHub 干货榜放在一个安静、可扩展的桌面应用里。
 
-## 当前功能
+> 目标：让信息服务于行动，而不是让更多通知占据注意力。
 
-| 模块 | 说明 |
-| --- | --- |
-| 工作总览 | 查看今日任务、完成节奏、快捷收集和本地工作状态。 |
-| 任务管理 | 三列看板、优先级、截止日期、项目标签与状态切换。 |
-| 灵感笔记 | 本地自动保存的笔记列表与编辑器。 |
-| 专注模式 | 25 分钟番茄钟，可关联当前要推进的任务。 |
-| 快捷入口 | 保存常用网站、文档库或工具链接。 |
-| 每日认知 | 分为“每日资讯”和“认知提升”两个内容模块，并含商业思维分类。 |
-| GitHub 干货榜 | 开源项目 / Agent Skills 的总榜和周榜。 |
+![WorkBench 每日认知预览](./docs/ui-preview-cognition.png)
+![WorkBench 工作总览预览](./docs/ui-preview-dashboard.png)
 
-## 每日认知
+## 功能概览
 
-### 两个内容模块
+- **工作总览**：今日待办、完成进度、专注时间、最近笔记和节奏趋势。
+- **任务管理**：三列看板、优先级、截止日期、项目标签和状态切换。
+- **灵感笔记**：本地自动保存的笔记列表与编辑器。
+- **专注模式**：25 分钟番茄钟，可关联当前任务；每日统计按本地日期自动归零。
+- **快捷入口**：保存常用网站、文档库和工作工具。
+- **每日认知**：分为“每日资讯”和“认知提升”，覆盖政治、思维、心理、法律、经济、商业、科技、健康和电力能源等分类。
+- **GitHub 干货榜**：开源项目与 Agent Skills 的总榜、周榜，支持鼠标拖拽和左右按钮平滑浏览。
+- **本地优先存储**：不需要账号和云端数据库；桌面版会额外备份本机工作数据。
 
-- **每日资讯**：抓取国内相关板块的资讯热点，覆盖社会、法律、经济、商业、科技、健康、电力能源等领域；扩大到主流媒体、专业媒体和行业媒体，以时效、事实和现实影响为优先。
-- **认知提升**：不再抓取新闻。内容来自书籍核心思想、经典文本与科普知识，并整理成原创知识卡。
+## 公开仓库边界
 
-### 国内直连资讯源
+本仓库只包含可复现应用所需的源码、公开素材、构建配置和文档。以下内容不会被提交：
 
-每日资讯不再通过 Google News 搜索或跳转，主进程直接请求国内网站公开的 RSS：
+- `node_modules/`、`dist/`、`dist-electron/`、`release/` 等依赖和构建产物；
+- `.env`、本地配置、日志和临时预览文件；
+- 任务、笔记、快捷入口、思考记录以及 Electron 用户数据目录中的 `workbench-storage.json`；
+- 任何账号密码、访问令牌或个人电脑绝对路径。
 
-- [新华网](https://www.news.cn/)：时政、国际、财经、科技、健康、法治。
-- [人民网](https://www.people.com.cn/)：时政、社会、文化、财经、科技、健康、法治。
-- [中国新闻网 RSS](https://www.chinanews.com.cn/rss/)：即时、时政、国际、社会、财经、健康、法治、理论、文化。
-- [36氪 RSS](https://www.36kr.com/rss-center)：综合资讯、文章、商业科技快讯。
+应用不内置私有 API 密钥，也不上传个人工作内容。联网功能只请求公开的 RSS 和 GitHub REST API；外部文章链接会直接指向原站。
 
-这些源均由应用直接访问，资讯链接也直接指向原网站；无需连接 Google，也不会生成 Google 转接地址。每个 RSS 在主进程中缓存 5 分钟，手动点击“更新本板块”会绕过缓存重新请求。
+详细说明见 [隐私与数据边界](./docs/privacy.md)。
 
+## 快速开始
 
+### 开发环境运行
 
-模式切换、当前分类和分类导航合并在同一个紧凑面板中；分类以横向标签显示，避免重复的大卡片占用纵向空间。每个分类展示 1 个重点知识，另外 5 张卡片收纳在重点卡内部，点击“展开 5 条知识卡 / 国内热点”后向下展开。
-
-“学习迁移卡”和“今日判断框架”在填写前可以选择关联重点内容或 5 张列表条目。保存后的认知产出会记录关联标题、来源和链接；产出保存在本地，页面展示最近 6 条，最多保留 100 条，并支持打开来源、复制和删除。
-每张认知提升知识卡均包含“核心概念、适用场景、自测问题”，目标是形成可复用的判断方法，而不是增加信息焦虑。知识卡按日期轮换，来源链接只用于继续查阅，不复制大段受版权保护的原文。
-
-两个模块都提供以下分类：综合总览、政治与格局、思维与经典、心理与人际、法律与民法、经济与财富、**商业思维**、科技与 AI、中医药与针灸、电力与能源。
-
-内容筛选会排除情绪文案、毒鸡汤、短视频话术、招生简章、活动报道、招标公告、破产公告等低信息密度内容。医疗、法律和投资相关内容仅用于学习与认知，不构成医疗诊断、法律意见或投资建议。
-
-### 更新机制
-
-- 应用运行期间，每日 08:00 自动更新两个模块的总览内容。
-- 应用在 08:00 后首次启动时，会补拉当日内容。
-- 每日资讯点击“更新本板块”会强制重新联网抓取，不复用主进程缓存。
-- 认知提升点击“换一组知识卡”会传入新的轮换参数，立即更换重点内容和知识卡组合。
-- 页面内容会按“模块 + 分类”写入本地缓存；思考卡内容也会自动保存。
-
-## GitHub 干货榜
-
-- 使用 GitHub Search API 获取仓库数据。
-- “总榜”按 Star 排序；“周榜”限定近 7 天创建的仓库。
-- 支持“开源项目”和“Agent Skills”两类。
-- 点击刷新会发起禁用缓存的新请求；短时间内榜单顺序相同属于正常情况，更新时间会变化。
-
-## 下载后能否运行？
-
-本仓库上传的是完整源码，克隆或下载 ZIP 后可以运行，但不能直接双击源码中的 index.html。桌面版依赖 Electron 主进程，因此首次运行需要：
-
-- Windows 10/11（当前一键脚本面向 Windows）；
-- Node.js 20 LTS（随 npm 一起安装）；
-- 首次安装依赖时可以访问 npm 镜像或网络。
-
-仓库会保留 package.json、package-lock.json、src/、electron/、public/、vite.config.ts 和启动脚本；node_modules/、dist/、dist-electron/ 和日志文件已被 .gitignore 排除，不建议把这些生成目录上传到 GitHub。
-
-下载后有两种方式：
-
-1. **Windows 一键启动**：解压项目后双击根目录的 start-workbench.cmd。脚本会在首次启动时执行 npm install，然后启动 Vite + Electron。
-2. **命令行启动**：在项目根目录执行 npm ci，再执行 npm run dev；如果只想启动已经构建好的版本，执行 npm run build 后再执行 npm start。
-
-项目现在提供 Windows 免环境分发包：WorkBench-Setup-0.1.0-x64.exe 是标准安装程序，WorkBench-Portable-0.1.0-x64.exe 是无需安装的便携版。用户不需要安装 Node.js 或 npm，直接运行其中一个 EXE 即可。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”提示；正式对外发布时建议使用代码签名证书。安装包应上传到 GitHub Releases，不要提交到源码仓库。
-
-### GitHub Pages 与桌面版的区别
-
-仓库已配置 GitHub Actions，推送到 master 后会构建并发布静态页面（默认地址为 https://NaNaOY.github.io/workbench/，具体以仓库 Pages 设置显示为准）。Pages 适合展示界面和使用浏览器本地缓存，但它没有 Electron 主进程，因此：
-
-- 任务、笔记、快捷入口和思考记录会保存在当前浏览器的 localStorage；
-- 每日资讯和 GitHub 榜单的联网更新、系统外链打开、桌面文件备份等能力需要使用桌面版；
-- 每个访问者的数据彼此隔离，不会写入 GitHub 仓库，也不会共享给其他人。
-
-桌面版会额外把本地存储备份到 Electron 的用户数据目录中的 workbench-storage.json。可以在工作台的本地存储提示中查看实际路径；该文件属于个人数据，不要提交到 GitHub。
-## 快速启动
-
-### 一键启动
-
-双击项目根目录的 [start-workbench.cmd](./start-workbench.cmd)。首次运行会自动安装依赖，然后以开发模式启动 Electron。
-
-桌面快捷方式指向此启动脚本。修改 Electron 主进程代码后，请完全退出 WorkBench 再重新打开；仅刷新页面不会重启主进程。
-
-### 命令行启动
+要求 Windows 10/11、Node.js 20 LTS 和 npm：
 
 ```powershell
-# 安装依赖（首次运行）
-npm install
+# 克隆仓库后进入目录
+npm ci
 
-# 开发模式：启动 Vite 与 Electron
+# 启动 Vite + Electron 开发模式
 npm run dev
+```
 
-# 生产构建：生成 dist/ 和 dist-electron/
+也可以双击根目录的 [start-workbench.cmd](./start-workbench.cmd)。首次启动会安装依赖，然后打开桌面应用。源码不能直接双击 `index.html`，因为桌面版需要 Electron 主进程。
+
+### 构建与检查
+
+```powershell
+npm run typecheck
 npm run build
-
-# 从生产构建启动
 npm start
 ```
 
 ### 生成免环境 Windows 安装包
 
-安装包构建使用 Electron Builder，产物写入项目根目录的 release/（该目录已加入 .gitignore）：
+安装包使用 Electron Builder，产物写入被忽略的 `release/` 目录：
 
-~~~powershell
-# 生成 NSIS 安装程序 + 便携版
+```powershell
+# 生成标准安装程序和便携版
 npm run package:win
 
 # 只生成便携版
 npm run package:portable
-~~~
+```
 
 生成结果：
 
-- release/WorkBench-Setup-0.1.0-x64.exe：标准 Windows 安装程序，可创建桌面和开始菜单快捷方式；
-- release/WorkBench-Portable-0.1.0-x64.exe：绿色便携版，复制到其他 Windows 电脑后可直接运行；
-- release/win-unpacked/：未压缩的调试目录，不用于分发。
+- `release/WorkBench-Setup-0.1.0-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
+- `release/WorkBench-Portable-0.1.0-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
 
-首次构建可能需要联网下载 Electron Builder 的安装器组件；构建完成后的 EXE 不依赖 Node.js、npm 或项目源码。安装包中的本地数据仍按用户分别保存，不会上传到 GitHub。
-## 开发与验证
-
-```powershell
-# TypeScript 类型检查
-npm run typecheck
-
-# 渲染层构建
-npm run build:renderer
-
-# Electron 主进程构建
-npm run build:electron
-
-# 完整生产构建
-npm run build
-```
-
-生产构建配置了相对资源路径，因此 `npm start` 可通过 Electron 本地文件入口正常加载页面。
+安装包不依赖 Node.js、npm 或项目源码。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”；正式分发时请使用自己的代码签名证书。安装包建议上传到 GitHub Releases，而不是提交到源码仓库。更多细节见 [桌面打包说明](./docs/packaging.md)。
 
 ## 项目结构
 
 ```text
 personal-workbench/
-├─ src/
-│  ├─ App.tsx                 # 工作台主界面、任务、笔记、专注与入口
-│  ├─ DailyCognitionView.tsx  # 每日资讯 / 认知提升界面
-│  ├─ KnowledgeViews.tsx      # GitHub 榜单界面
-│  ├─ data.ts                 # 本地工作数据读写
-│  ├─ styles.css              # 通用界面与自定义选择菜单样式
-│  ├─ cognition.css           # 每日认知阅读样式
-│  ├─ glass-theme.css         # 全屏布局、菜单与点击反馈基础层
-│  └─ refined-theme.css       # 最终视觉令牌和全局界面收敛层
+
+├─ docs/
+│  ├─ packaging.md                 # Windows 免环境打包说明
+│  ├─ privacy.md                   # 隐私、本地存储和网络边界
+│  ├─ ui-preview-cognition.png     # 公开界面预览
+│  └─ ui-preview-dashboard.png     # 公开界面预览
 ├─ electron/
-│  ├─ main.ts                 # Electron 窗口与应用入口
-│  ├─ preload.ts              # 受限的渲染层 IPC 接口
-│  ├─ content.ts              # 更新调度、GitHub 请求、外链打开
-│  ├─ cognition.ts            # 每日资讯查询、过滤与分类
-│  └─ learning.ts             # 书籍思想与科普知识卡库、每日轮换
-├─ public/assets/             # 图标、Logo 与界面素材
-├─ start-workbench.cmd        # Windows 一键启动脚本
-├─ vite.config.ts             # Vite 构建配置
-└─ package.json               # 依赖与脚本
+│  ├─ main.ts                      # Electron 窗口和应用入口
+│  ├─ preload.ts                   # 受限的 IPC / 本地数据桥接
+│  ├─ storage.ts                   # 用户数据备份到 Electron userData
+│  ├─ content.ts                   # 更新调度、GitHub 请求、外链打开
+│  ├─ cognition.ts                 # 每日资讯查询和筛选
+│  └─ learning.ts                  # 认知提升知识卡内容库
+├─ public/assets/                  # 应用图标、Logo 和公开界面素材
+├─ src/
+│  ├─ App.tsx                      # 工作台主界面
+│  ├─ DailyCognitionView.tsx       # 每日资讯 / 认知提升
+│  ├─ KnowledgeViews.tsx           # GitHub 干货榜
+│  ├─ data.ts                      # Web 本地存储读写
+│  ├─ types.ts                     # 共享类型
+│  └─ *.css                        # 页面和视觉主题
+├─ electron-builder.portable.json # 便携版构建配置
+├─ package.json                    # 脚本、依赖和 Electron Builder 配置
+├─ start-workbench.cmd             # Windows 一键启动
+└─ vite.config.ts                  # Vite 构建配置
 ```
 
-## 本地数据与隐私
+## 数据、隐私和网络
 
-- 工作台任务、笔记、快捷入口、专注数据：浏览器 `localStorage`；专注分钟数和完成时段按本地日期保存，跨天自动归零。
-- 每日认知、GitHub 榜单与思考卡：浏览器 `localStorage` 缓存。
-- 不上传任务、笔记或思考内容。
-- 每日资讯、GitHub 榜单在手动刷新或定时更新时请求公开数据；认知提升知识卡来自应用内置内容库。
-- 外部链接只允许以 `http` 或 `https` 协议在系统浏览器中打开。
+- 任务、笔记、快捷入口、思考卡和认知缓存只在本机保存；
+- 桌面版启动时会将浏览器存储镜像备份到 Electron 的用户数据目录，卸载时默认保留；
+- 每日资讯通过公开 RSS 获取，GitHub 榜单通过公开 GitHub REST API 获取；
+- 应用不包含遥测、不建立用户账号、不上传个人工作内容；
+- 医疗、法律、投资等内容仅用于学习与信息整理，不构成诊断、法律意见或投资建议。
 
-## 内容与刷新排错
+如需清理本机数据，请先导出或备份，再清除应用对应的浏览器存储和 `workbench-storage.json`。请勿把这些文件上传到 Issue、Pull Request 或公开仓库。
 
-| 现象 | 处理方式 |
-| --- | --- |
-| 点击刷新后内容看似相同 | 内容源在短时间内可能没有新增文章；检查“本板块更新于”或 GitHub 的更新时间是否变化。 |
-| 仍显示旧的刷新逻辑 | 完全退出 WorkBench，再从桌面快捷方式重新启动。 |
-| 无法更新 | 检查网络、系统代理和 GitHub / 内容源的可访问性；界面会保留上一次成功数据。 |
-| 首次启动空白 | 先执行 `npm install`，再使用 `start-workbench.cmd` 或 `npm run dev`。 |
-| 本地数据需要重置 | 在应用开发者工具或浏览器存储中清除对应 `localStorage`；此操作会删除本机保存的数据。 |
+## 贡献
 
-## 技术栈
+欢迎提交 Issue、改进界面、修复数据源或补充文档。提交前请运行：
 
-- Electron 31
-- React 18
-- TypeScript 5
-- Vite 5
-- Lucide React 图标
-- 本地存储：Web `localStorage`
-- 网络内容：新华网 / 人民网 / 中国新闻网 / 36氪公开 RSS、GitHub REST Search API
+```powershell
+npm run typecheck
+npm run build
+```
 
-## 版本状态
+请不要在 Issue 或 Pull Request 中粘贴任务内容、笔记内容、用户目录路径、访问令牌或其他个人数据。
 
-当前版本为 `0.1.0`。已完成 TypeScript 类型检查与生产构建验证。
+## 许可证
 
-## 界面视觉与本地素材
+本项目以 MIT License 开源，详见 [LICENSE](./LICENSE)。第三方网站、RSS 内容、项目图标和用户自有素材仍受其各自许可约束。
 
-当前界面采用“安静工作台”视觉体系，目标是减少模板化的 AI 卡片感，让任务、正文和输入始终成为第一视觉层级：
+## 当前版本
 
-- 画布使用暖灰中性色，正文表面以白色和发丝边框区分层级，不再为每张卡片叠加渐变、玻璃和大阴影。
-- 全局只保留一套靛蓝强调色；成功、提醒和危险状态使用低饱和语义色。
-- 深色侧栏、标题栏、按钮、筛选器、表单和空状态使用统一的尺寸、圆角、间距和焦点环。
-- 字符图标已替换为 Lucide 图标；资讯与 GitHub 内容仍保留原文需要的名称和技术术语。
-- 玻璃效果只用于标题栏、模态弹窗和浮层菜单，用来表达真实的前后层级。
-- 普通卡片悬停不再上浮；按钮按压、下拉展开和弹窗只使用 100–200ms 的柔和反馈。
-- 专注模式使用低干扰的深石墨与淡靛蓝光感，不再依赖图片背景；其他页面同样避免铺设抢眼的装饰背景。
-
-每日资讯和认知提升均使用相同的“知识阅读 + 关联记录”双栏网格。桌面宽度下两栏自动等高并保持底边对齐；展开 5 条知识卡后，记录栏会随同一网格行同步拉伸。屏幕宽度低于 900px 时自动改为上下排列，以保证输入区可读性。
-
-任务管理、灵感笔记和专注模式会在桌面窗口中自动占满顶部栏下方的可用高度。任务看板的三列分别在内部滚动；笔记列表与编辑器分别在内部滚动；专注卡、计时器和今日统计会随窗口高度伸展。在窄屏设备上，各模块恢复为自然的上下排列。
-
-全局点击会在指针位置显示小型单色光环与四颗微光点，效果不捕获事件、不影响按钮操作，并在系统开启“减少动态效果”时自动停用。
-
-### 样式分层
-
-1. `styles.css`：组件基础布局。
-2. `assets-theme.css`：品牌图标、头像与专注场景素材。
-3. `glass-theme.css`：全屏适配、自定义状态菜单、点击反馈和必要的浮层能力。
-4. `refined-theme.css`：最终设计令牌与全页面视觉收敛，必须最后加载。
-
-本轮已通过 1500 × 950 隔离 Electron 窗口进行多页面截图对照，并自动回归导航、任务状态菜单、新建任务、笔记创建、专注计时、快捷入口、知识抽屉、关联笔记保存、GitHub 榜单和全局点击反馈。
+`0.1.0`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。
