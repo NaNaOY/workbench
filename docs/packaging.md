@@ -22,9 +22,16 @@ npm run package:portable
 
 产物写入 `release/`，该目录已被 `.gitignore` 排除：
 
-- `WorkBench-Setup-0.1.1-x64.exe`：标准安装程序；
-- `WorkBench-Portable-0.1.1-x64.exe`：绿色便携版；
+- `WorkBench-Setup-0.1.2-x64.exe`：标准安装程序；
+- `WorkBench-Portable-0.1.2-x64.exe`：绿色便携版；
 - `win-unpacked/`：本地调试目录，不用于分发。
+
+## 升级与卸载
+
+- **安装版升级**：运行新的 `WorkBench-Setup-*.exe` 即可覆盖已有安装。安装器使用稳定的应用标识和安装目录，会先静默移除旧版本程序文件，再写入新版本；不会删除任务、笔记、快捷入口和每日内容缓存。
+- **避免重复安装**：安装版不再允许每次选择新的目录，升级时会自动沿用已有安装位置。请不要把便携版和安装版混装到同一个目录。
+- **卸载安装版**：在 Windows「设置 → 应用 → 已安装的应用」中找到 WorkBench，点击「卸载」；也可以运行安装目录中的 `Uninstall WorkBench.exe`。卸载默认保留本地工作数据，便于重新安装后继续使用。
+- **便携版**：便携版没有注册表安装记录和卸载器。关闭应用后，直接删除 `WorkBench-Portable-*.exe` 文件即可；如需保留数据，请先备份应用数据目录。
 
 ## 发布建议
 
