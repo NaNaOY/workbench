@@ -1,4 +1,4 @@
-import { Bookmark, Note, Task, WorkspaceData } from './types';
+import { Bookmark, FocusRecord, Note, Problem, Task, WorkspaceData } from './types';
 import { readStoredText, writeStoredJson, STORAGE_KEYS } from './storage';
 
 export const STORAGE_KEY = STORAGE_KEYS.workspace;
@@ -44,10 +44,60 @@ export const seedWorkspace: WorkspaceData = {
     { id: 'link-2', title: 'Notion', url: 'https://www.notion.so', description: '项目资料与知识库', color: '#f3ebff' },
     { id: 'link-3', title: 'ChatGPT', url: 'https://chatgpt.com', description: '协作与灵感助手', color: '#e5f6f4' },
   ],
+  problems: [
+    {
+      id: 'problem-1',
+      title: 'A + B 问题',
+      source: '洛谷 P1000',
+      difficulty: '入门',
+      tags: ['基础'],
+      status: 'solved',
+      url: 'https://www.luogu.com.cn/problem/P1000',
+      notes: '两数之和，注意整数溢出即可。',
+      category: '入门',
+      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    },
+    {
+      id: 'problem-2',
+      title: '最长上升子序列',
+      source: '洛谷 B3637',
+      difficulty: '普及/提高-',
+      tags: ['DP', '序列'],
+      status: 'attempting',
+      url: 'https://www.luogu.com.cn/problem/B3637',
+      notes: '经典 LIS 问题，O(n log n) 贪心优化。',
+      category: 'DP 专题',
+      createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    },
+  ],
   focusDate: localDateKey(),
   focusMinutes: 0,
   focusSessions: 0,
+  focusRecords: [],
 };
+
+function restoreFocusRecords(value: unknown): FocusRecord[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Partial<FocusRecord>;
+    const minutes = Number(record.minutes);
+    const sessions = Number(record.sessions);
+    if (!record.id || !record.date || !record.completedAt || !Number.isFinite(minutes) || minutes <= 0) return [];
+    return [{
+      id: String(record.id),
+      date: String(record.date),
+      completedAt: String(record.completedAt),
+      minutes,
+      sessions: Number.isFinite(sessions) && sessions > 0 ? sessions : 1,
+      taskId: record.taskId ? String(record.taskId) : undefined,
+      taskTitle: record.taskTitle ? String(record.taskTitle) : '未关联任务',
+      project: record.project ? String(record.project) : '未分类',
+    }];
+  });
+}
 
 export function loadWorkspace(): WorkspaceData {
   try {
@@ -57,13 +107,29 @@ export function loadWorkspace(): WorkspaceData {
     if (!Array.isArray(parsed.tasks) || !Array.isArray(parsed.notes) || !Array.isArray(parsed.bookmarks)) return seedWorkspace;
     const today = localDateKey();
     const hasTodayFocusStats = parsed.focusDate === today;
+    const restoredRecords = restoreFocusRecords(parsed.focusRecords);
+    const focusMinutes = hasTodayFocusStats ? Number(parsed.focusMinutes) || 0 : 0;
+    const focusSessions = hasTodayFocusStats ? Number(parsed.focusSessions) || 0 : 0;
+    const focusRecords = restoredRecords.length > 0 || focusMinutes <= 0
+      ? restoredRecords
+      : [{
+        id: `focus-legacy-${today}`,
+        date: today,
+        completedAt: new Date(`${today}T12:00:00`).toISOString(),
+        minutes: focusMinutes,
+        sessions: Math.max(1, focusSessions),
+        taskTitle: '历史专注',
+        project: '未分类',
+      }];
     return {
       tasks: parsed.tasks as Task[],
       notes: parsed.notes as Note[],
       bookmarks: parsed.bookmarks as Bookmark[],
+      problems: Array.isArray(parsed.problems) ? (parsed.problems as Problem[]) : [],
       focusDate: today,
-      focusMinutes: hasTodayFocusStats ? Number(parsed.focusMinutes) || 0 : 0,
-      focusSessions: hasTodayFocusStats ? Number(parsed.focusSessions) || 0 : 0,
+      focusMinutes,
+      focusSessions,
+      focusRecords,
     };
   } catch {
     return seedWorkspace;

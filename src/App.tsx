@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  BookOpen,
   BrainCircuit,
   CircleCheck,
   Github,
@@ -13,12 +14,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { createId, loadWorkspace, localDateKey, saveWorkspace } from './data';
-import { Bookmark, Note, Priority, Task, TaskStatus, WorkspaceData } from './types';
-import { AppSelect, BookmarksView, DashboardView, FocusView, NotesView, TasksView } from './AppViews';
+import { Bookmark, Note, Priority, Problem, Task, TaskStatus, WorkspaceData } from './types';
+import { BookmarksView, DashboardView, FocusView, NotesView, TasksView } from './AppViews';
+import { AppSelect } from './components/AppSelect';
 import { GitHubRankingView } from './KnowledgeViews';
+import { ProblemsView } from './components/ProblemsView';
 import DailyCognitionView from './DailyCognitionView';
 
-type View = 'dashboard' | 'growth' | 'github' | 'tasks' | 'notes' | 'focus' | 'bookmarks';
+type View = 'dashboard' | 'growth' | 'github' | 'tasks' | 'notes' | 'focus' | 'bookmarks' | 'problems';
 
 const navItems: Array<{ id: View; label: string; icon: LucideIcon }> = [
   { id: 'growth', label: '每日认知', icon: BrainCircuit },
@@ -26,6 +29,7 @@ const navItems: Array<{ id: View; label: string; icon: LucideIcon }> = [
   { id: 'dashboard', label: '工作总览', icon: LayoutDashboard },
   { id: 'tasks', label: '任务管理', icon: ListTodo },
   { id: 'notes', label: '灵感笔记', icon: NotebookPen },
+  { id: 'problems', label: '信息学题单', icon: BookOpen },
   { id: 'focus', label: '专注模式', icon: Timer },
   { id: 'bookmarks', label: '快捷入口', icon: Link2 },
 ];
@@ -79,6 +83,7 @@ export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceData>(() => loadWorkspace());
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [showTaskComposer, setShowTaskComposer] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(() => loadWorkspace().notes[0]?.id ?? null);
   const [taskDraft, setTaskDraft] = useState({ title: '', priority: 'medium' as Priority, project: '收件箱', due: isoToday() });
   const [bookmarkDraft, setBookmarkDraft] = useState({ title: '', url: '', description: '' });
@@ -136,14 +141,26 @@ export default function App() {
         if (current <= 1) {
           setIsFocusing(false);
           setWorkspace((data) => {
-            const today = localDateKey();
+            const completedAt = new Date();
+            const today = localDateKey(completedAt);
             const existingMinutes = data.focusDate === today ? data.focusMinutes : 0;
             const existingSessions = data.focusDate === today ? data.focusSessions : 0;
+            const task = data.tasks.find((item) => item.id === focusTaskId);
             return {
               ...data,
               focusDate: today,
               focusMinutes: existingMinutes + 25,
               focusSessions: existingSessions + 1,
+              focusRecords: [...data.focusRecords, {
+                id: createId('focus'),
+                date: today,
+                completedAt: completedAt.toISOString(),
+                minutes: 25,
+                sessions: 1,
+                taskId: task?.id,
+                taskTitle: task?.title ?? '自由专注',
+                project: task?.project.trim() || '未分类',
+              }],
             };
           });
           notify('一个专注时段已完成，做得漂亮。');
@@ -153,7 +170,7 @@ export default function App() {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [isFocusing]);
+  }, [isFocusing, focusTaskId]);
 
   const today = isoToday();
   const activeTasks = workspace.tasks.filter((task) => task.status !== 'done');
@@ -178,23 +195,46 @@ export default function App() {
     window.setTimeout(() => setToast(''), 2600);
   }
 
-  function addTask(event: FormEvent<HTMLFormElement>) {
+  function openAddTask() {
+    setEditingTaskId(null);
+    setTaskDraft({ title: '', priority: 'medium', project: '收件箱', due: isoToday() });
+    setShowTaskComposer(true);
+  }
+
+  function openEditTask(task: Task) {
+    setEditingTaskId(task.id);
+    setTaskDraft({ title: task.title, priority: task.priority, project: task.project, due: task.due });
+    setShowTaskComposer(true);
+  }
+
+  function submitTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const title = taskDraft.title.trim();
     if (!title) return;
-    const task: Task = {
-      id: createId('task'),
-      title,
-      status: 'todo',
-      priority: taskDraft.priority,
-      project: taskDraft.project.trim() || '收件箱',
-      due: taskDraft.due,
-    };
-    setWorkspace((data) => ({ ...data, tasks: [task, ...data.tasks] }));
-    setTaskDraft({ title: '', priority: 'medium', project: '收件箱', due: today });
+    if (editingTaskId) {
+      setWorkspace((data) => ({
+        ...data,
+        tasks: data.tasks.map((task) => task.id === editingTaskId
+          ? { ...task, title, priority: taskDraft.priority, project: taskDraft.project.trim() || '收件箱', due: taskDraft.due }
+          : task),
+      }));
+      notify('任务已更新。');
+    } else {
+      const task: Task = {
+        id: createId('task'),
+        title,
+        status: 'todo',
+        priority: taskDraft.priority,
+        project: taskDraft.project.trim() || '收件箱',
+        due: taskDraft.due,
+      };
+      setWorkspace((data) => ({ ...data, tasks: [task, ...data.tasks] }));
+      setActiveView('tasks');
+      notify('任务已加入工作台。');
+    }
+    setTaskDraft({ title: '', priority: 'medium', project: '收件箱', due: isoToday() });
+    setEditingTaskId(null);
     setShowTaskComposer(false);
-    setActiveView('tasks');
-    notify('任务已加入工作台。');
   }
 
   function updateTask(id: string, patch: Partial<Task>) {
@@ -260,6 +300,30 @@ export default function App() {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  function addProblem(problem: Omit<Problem, 'id' | 'createdAt' | 'updatedAt'>) {
+    const now = new Date().toISOString();
+    const newProblem: Problem = {
+      ...problem,
+      id: createId('problem'),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setWorkspace((data) => ({ ...data, problems: [newProblem, ...data.problems] }));
+    notify('题目已加入题库。');
+  }
+
+  function updateProblem(id: string, patch: Partial<Problem>) {
+    setWorkspace((data) => ({
+      ...data,
+      problems: data.problems.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p)),
+    }));
+  }
+
+  function deleteProblem(id: string) {
+    setWorkspace((data) => ({ ...data, problems: data.problems.filter((p) => p.id !== id) }));
+    notify('题目已移除。');
+  }
+
   function renderView() {
     switch (activeView) {
       case 'growth':
@@ -273,7 +337,8 @@ export default function App() {
             tasks={workspace.tasks}
             onUpdate={updateTask}
             onDelete={deleteTask}
-            onAdd={() => setShowTaskComposer(true)}
+            onAdd={openAddTask}
+            onEdit={openEditTask}
           />
         );
       case 'notes':
@@ -298,6 +363,7 @@ export default function App() {
             tasks={activeTasks}
             focusMinutes={workspace.focusMinutes}
             focusSessions={workspace.focusSessions}
+            focusRecords={workspace.focusRecords}
             onFocusTask={setFocusTaskId}
             onToggle={() => setIsFocusing((running) => !running)}
             onReset={() => {
@@ -318,6 +384,15 @@ export default function App() {
             onAdd={addBookmark}
             onOpen={openBookmark}
             onDelete={(id) => setWorkspace((data) => ({ ...data, bookmarks: data.bookmarks.filter((link) => link.id !== id) }))}
+          />
+        );
+      case 'problems':
+        return (
+          <ProblemsView
+            problems={workspace.problems}
+            onAdd={addProblem}
+            onUpdate={updateProblem}
+            onDelete={deleteProblem}
           />
         );
       case 'dashboard':
@@ -383,7 +458,7 @@ export default function App() {
               <span><strong>我的空间</strong><small>本地工作台</small></span>
             </div>
             <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建任务</span></div>
-            <button type="button" className="primary-button" onClick={() => setShowTaskComposer(true)}>
+            <button type="button" className="primary-button" onClick={openAddTask}>
               <Plus size={16} aria-hidden="true" /> 新建任务
             </button>
           </div>
@@ -394,11 +469,11 @@ export default function App() {
 
       {showTaskComposer && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowTaskComposer(false)}>
-          <form className="task-composer" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}>
+          <form className="task-composer" onSubmit={submitTask} onMouseDown={(event) => event.stopPropagation()}>
             <div className="composer-heading">
               <div>
-                <span className="eyebrow">快速收集</span>
-                <h2>添加一件要事</h2>
+                <span className="eyebrow">{editingTaskId ? '编辑任务' : '快速收集'}</span>
+                <h2>{editingTaskId ? '修改任务详情' : '添加一件要事'}</h2>
               </div>
               <button type="button" className="icon-button" aria-label="关闭" onClick={() => setShowTaskComposer(false)}><X size={18} /></button>
             </div>
@@ -407,10 +482,10 @@ export default function App() {
               <input autoFocus value={taskDraft.title} onChange={(event) => setTaskDraft({ ...taskDraft, title: event.target.value })} placeholder="例如：整理客户反馈并确定下一步" />
             </label>
             <div className="form-grid">
-              <label className="field">
+              <div className="field">
                 <span>优先级</span>
                 <AppSelect ariaLabel="选择任务优先级" value={taskDraft.priority} options={[{ value: 'high', label: '高优先级' }, { value: 'medium', label: '中优先级' }, { value: 'low', label: '低优先级' }]} onChange={(value) => setTaskDraft({ ...taskDraft, priority: value as Priority })} />
-              </label>
+              </div>
               <label className="field">
                 <span>截止日期</span>
                 <input type="date" value={taskDraft.due} onChange={(event) => setTaskDraft({ ...taskDraft, due: event.target.value })} />
@@ -422,7 +497,7 @@ export default function App() {
             </label>
             <div className="composer-actions">
               <button type="button" className="text-button" onClick={() => setShowTaskComposer(false)}>取消</button>
-              <button type="submit" className="primary-button">加入任务清单</button>
+              <button type="submit" className="primary-button">{editingTaskId ? '保存修改' : '加入任务清单'}</button>
             </div>
           </form>
         </div>

@@ -67,7 +67,7 @@ contextBridge.exposeInMainWorld('desktop', {
   platform: process.platform,
   persistStorage: queueStorageSync,
   getStoragePath: () => ipcRenderer.invoke('storage:get-path'),
-  getDailyContent: (category?: string, mode?: 'current' | 'growth', force?: boolean) => ipcRenderer.invoke('content:get-daily', category, mode, force),
+  getDailyContent: (category?: string, mode?: 'current' | 'growth' | 'overseas', force?: boolean) => ipcRenderer.invoke('content:get-daily', category, mode, force),
   onDailyUpdated: (listener: () => void) => {
     const handler = () => listener();
     ipcRenderer.on('content:daily-updated', handler);
@@ -75,6 +75,6 @@ contextBridge.exposeInMainWorld('desktop', {
   },
   getGitHubRanking: (request: { category: 'projects' | 'skills'; period: 'all' | 'week' }) =>
     ipcRenderer.invoke('content:get-github', request),
-  openExternal: (url: string) => ipcRenderer.invoke('content:open-external', url),
+  openExternal: (url: string, allowInternationalSources = false) => ipcRenderer.invoke('content:open-external', url, allowInternationalSources),
   notify: (title: string, body: string) => ipcRenderer.send('content:notify', { title, body }),
 });

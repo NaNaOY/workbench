@@ -7,12 +7,12 @@ import {
   CheckSquare2,
   ChevronDown,
   Clock3,
-  Command,
   ExternalLink,
   Lightbulb,
   ListTodo,
   NotebookPen,
   Pause,
+  Pencil,
   Plus,
   Sun,
   Timer,
@@ -20,7 +20,10 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { localDateKey } from './data';
-import { Bookmark, Note, Priority, Task, TaskStatus } from './types';
+import { Bookmark, FocusRecord, Note, Priority, Task, TaskStatus } from './types';
+import { FocusInsights } from './components/FocusInsights';
+import { RichNoteEditor, noteTextPreview } from './components/NoteEditor';
+import { AppSelect } from './components/AppSelect';
 
 const BASE_URL = import.meta.env.BASE_URL;
 const focusSeconds = 25 * 60;
@@ -164,7 +167,7 @@ export function DashboardView({
             {notes.slice(0, 3).map((note) => (
               <button type="button" onClick={onOpenNotes} className="note-card" key={note.id} style={{ background: note.color }}>
                 <strong>{note.title}</strong>
-                <span>{note.content || '点击开始记录…'}</span>
+                <span>{noteTextPreview(note.content) || '点击开始记录…'}</span>
                 <small>{relativeTime(note.updatedAt)}</small>
               </button>
             ))}
@@ -196,7 +199,7 @@ function MetricCard({ icon: Icon, tone, label, value, detail, action, onClick }:
   );
 }
 
-export function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { taskGroups: Array<{ status: TaskStatus; title: string; hint: string }>; tasks: Task[]; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void; onAdd: () => void }) {
+export function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd, onEdit }: { taskGroups: Array<{ status: TaskStatus; title: string; hint: string }>; tasks: Task[]; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void; onAdd: () => void; onEdit: (task: Task) => void }) {
   const [filter, setFilter] = useState<'all' | Priority>('all');
   const displayed = filter === 'all' ? tasks : tasks.filter((task) => task.priority === filter);
   const filterCounts: Record<'all' | Priority, number> = {
@@ -227,7 +230,7 @@ export function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { ta
                 <span className={`column-dot ${group.status}`} />
               </div>
               <div className="task-stack">
-                {groupTasks.map((task) => <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDelete={onDelete} />)}
+                {groupTasks.map((task) => <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} />)}
                 {groupTasks.length === 0 && <div className="column-empty">这里还没有任务</div>}
               </div>
             </section>
@@ -238,12 +241,15 @@ export function TasksView({ taskGroups, tasks, onUpdate, onDelete, onAdd }: { ta
   );
 }
 
-function TaskCard({ task, onUpdate, onDelete }: { task: Task; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void }) {
+function TaskCard({ task, onUpdate, onDelete, onEdit }: { task: Task; onUpdate: (id: string, patch: Partial<Task>) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void }) {
   return (
     <article className={`task-card ${task.status === 'done' ? 'completed' : ''}`}>
       <div className="task-card-top">
         <PriorityPill priority={task.priority} />
-        <button type="button" className="delete-button" aria-label={`删除 ${task.title}`} onClick={() => onDelete(task.id)}><X size={14} /></button>
+        <div className="task-card-actions">
+          <button type="button" className="task-edit-button" aria-label={`编辑 ${task.title}`} onClick={() => onEdit(task)}><Pencil size={13} /></button>
+          <button type="button" className="delete-button" aria-label={`删除 ${task.title}`} onClick={() => onDelete(task.id)}><X size={14} /></button>
+        </div>
       </div>
       <strong>{task.title}</strong>
       <span className="task-project">{task.project}</span>
@@ -363,27 +369,58 @@ function PriorityPill({ priority }: { priority: Priority }) {
 }
 
 export function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate, onUpdate, onDelete }: { notes: Note[]; selectedNote: Note | null; selectedId: string | null; onSelect: (id: string) => void; onCreate: () => void; onUpdate: (id: string, patch: Partial<Note>) => void; onDelete: (id: string) => void }) {
+  const [query, setQuery] = useState('');
+  const visibleNotes = notes.filter((note) => {
+    const keyword = query.trim().toLowerCase();
+    if (!keyword) return true;
+    return `${note.title} ${noteTextPreview(note.content)}`.toLowerCase().includes(keyword);
+  });
+
   return (
-    <div className="notes-layout">
+    <div className="notes-layout notebook-layout">
       <aside className="notes-list-panel">
-        <div className="notes-list-head"><div><h2>灵感库</h2></div><button type="button" className="round-add" onClick={onCreate} aria-label="新建笔记"><Plus size={17} /></button></div>
+        <div className="notes-list-head">
+          <div>
+            <span className="notes-kicker">MY NOTEBOOK</span>
+            <h2>灵感库</h2>
+            <small>{notes.length} 篇本地笔记</small>
+          </div>
+          <button type="button" className="round-add" onClick={onCreate} aria-label="新建笔记"><Plus size={17} /></button>
+        </div>
+        <label className="notes-search">
+          <span className="sr-only">搜索笔记</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题或内容…" />
+        </label>
+        <div className="notes-section-label">我的笔记</div>
         <div className="notes-list">
-          {notes.map((note) => (
+          {visibleNotes.map((note) => (
             <button type="button" key={note.id} className={`note-list-item ${selectedId === note.id ? 'selected' : ''}`} onClick={() => onSelect(note.id)}>
               <span style={{ background: note.color }} />
-              <div><strong>{note.title || '未命名笔记'}</strong><small>{relativeTime(note.updatedAt)}</small></div>
+              <div><strong>{note.title || '未命名笔记'}</strong><small>{noteTextPreview(note.content) || '空白笔记'} · {relativeTime(note.updatedAt)}</small></div>
             </button>
           ))}
+          {!visibleNotes.length && <div className="notes-list-empty">没有匹配的笔记</div>}
         </div>
+        <div className="notes-sidebar-foot"><span><i /> 本地自动保存</span><small>图片与内容随工作台一起保存</small></div>
       </aside>
       <section className="note-editor-panel">
         {selectedNote ? (
           <>
-            <div className="note-editor-top"><span className="saved-indicator"><i /> 自动保存中</span><button type="button" className="text-button danger" onClick={() => onDelete(selectedNote.id)}>删除笔记</button></div>
+            <div className="note-editor-top">
+              <div>
+                <span className="note-breadcrumb">我的笔记 / {selectedNote.title || '未命名笔记'}</span>
+                <span className="saved-indicator"><i /> 自动保存中</span>
+              </div>
+              <button type="button" className="text-button danger" onClick={() => onDelete(selectedNote.id)}>删除笔记</button>
+            </div>
             <input className="note-title-input" value={selectedNote.title} onChange={(event) => onUpdate(selectedNote.id, { title: event.target.value })} placeholder="笔记标题" />
-            <div className="note-meta">最后更新于 {relativeTime(selectedNote.updatedAt)}</div>
-            <textarea className="note-editor" value={selectedNote.content} onChange={(event) => onUpdate(selectedNote.id, { content: event.target.value })} placeholder="从一个想法开始…\n\n支持用空行整理你的段落。" />
-            <div className="editor-tip"><Command size={14} /> Ctrl + N 可从任何页面快速添加任务</div>
+            <div className="note-meta"><span>最后更新于 {relativeTime(selectedNote.updatedAt)}</span><span>富文本笔记 · 支持图片</span></div>
+            <RichNoteEditor
+              key={selectedNote.id}
+              noteId={selectedNote.id}
+              value={selectedNote.content}
+              onChange={(content) => onUpdate(selectedNote.id, { content })}
+            />
           </>
         ) : (
           <EmptyState icon={Lightbulb} title="还没有笔记" description="记录正在酝酿的想法，未来的你会感谢现在的自己。" action="新建笔记" onAction={onCreate} />
@@ -393,35 +430,7 @@ export function NotesView({ notes, selectedNote, selectedId, onSelect, onCreate,
   );
 }
 
-interface AppSelectOption {
-  value: string;
-  label: string;
-}
-
-export function AppSelect({ value, options, onChange, ariaLabel }: { value: string; options: AppSelectOption[]; onChange: (value: string) => void; ariaLabel: string }) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  return (
-    <div className={`app-select ${open ? 'is-open' : ''}`} onBlur={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
-    }}>
-      <button type="button" className="app-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
-        <span>{selected?.label}</span><ChevronDown size={15} aria-hidden="true" />
-      </button>
-      {open && (
-        <div className="app-select-menu" role="listbox" aria-label={ariaLabel}>
-          {options.map((option) => (
-            <button type="button" role="option" aria-selected={option.value === value} key={option.value} className={option.value === value ? 'selected' : ''} onClick={() => { onChange(option.value); setOpen(false); }}>
-              <span>{option.label}</span>{option.value === value && <Check size={14} aria-hidden="true" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, focusMinutes, focusSessions, onFocusTask, onToggle, onReset }: { secondsLeft: number; isFocusing: boolean; focusTaskId: string; focusTask?: Task; tasks: Task[]; focusMinutes: number; focusSessions: number; onFocusTask: (id: string) => void; onToggle: () => void; onReset: () => void }) {
+export function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tasks, focusMinutes, focusSessions, focusRecords, onFocusTask, onToggle, onReset }: { secondsLeft: number; isFocusing: boolean; focusTaskId: string; focusTask?: Task; tasks: Task[]; focusMinutes: number; focusSessions: number; focusRecords: FocusRecord[]; onFocusTask: (id: string) => void; onToggle: () => void; onReset: () => void }) {
   const progress = ((focusSeconds - secondsLeft) / focusSeconds) * 100;
   return (
     <div className="focus-layout">
@@ -429,10 +438,10 @@ export function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tas
 
         <h2>给重要的事，一段完整的时间。</h2>
         <p>25 分钟内，暂时放下切换与干扰，只推进一件事。</p>
-        <label className="focus-task-select">
+        <div className="focus-task-select">
           <span>本轮专注于</span>
           <AppSelect ariaLabel="选择本轮专注任务" value={focusTaskId} options={[{ value: '', label: '选择一个任务（可选）' }, ...tasks.map((task) => ({ value: task.id, label: task.title }))]} onChange={onFocusTask} />
-        </label>
+        </div>
         {focusTask && <div className="focus-task-chip"><CheckSquare2 size={14} /> {focusTask.title}</div>}
       </section>
       <section className="timer-panel">
@@ -446,6 +455,7 @@ export function FocusView({ secondsLeft, isFocusing, focusTaskId, focusTask, tas
         <div><span>完成时段</span><strong>{focusSessions}<small> 个</small></strong></div>
         <div><span>下一次休息</span><strong>{isFocusing ? '专注后' : '随时'}<small>{isFocusing ? ' · 5 分钟' : ' · 由你决定'}</small></strong></div>
       </section>
+      <FocusInsights records={focusRecords} />
     </div>
   );
 }

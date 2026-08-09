@@ -1,7 +1,7 @@
 export const STORAGE_KEYS = {
   workspace: 'workbench:data:v1',
   cognitionReflectionHistory: 'workbench:cognition-outputs:v1',
-  cognitionCache: (mode: string, category: string) => `workbench:cognition:${mode}:${category}:v5`,
+  cognitionCache: (mode: string, category: string) => `workbench:cognition:${mode}:${category}:v6`,
   cognitionReflection: (mode: string, category: string, date: string) => `workbench:cognition-reflection:${mode}:${category}:${date}`,
   githubRanking: (category: string, period: string) => `workbench:github:${category}:${period}:v1`,
 } as const;

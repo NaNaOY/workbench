@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-type DesktopCognitionMode = 'current' | 'growth';
+type DesktopCognitionMode = 'current' | 'growth' | 'overseas';
 type DesktopCognitionCategory = 'digest' | 'politics' | 'thinking' | 'psychology' | 'law' | 'economy' | 'business' | 'technology' | 'medicine' | 'energy';
 type DesktopRankingCategory = 'projects' | 'skills';
 type DesktopRankingPeriod = 'all' | 'week';
@@ -57,7 +57,7 @@ type DesktopApi = {
     category: DesktopRankingCategory;
     period: DesktopRankingPeriod;
   }) => Promise<DesktopRankingResponse>;
-  openExternal: (url: string) => Promise<boolean>;
+  openExternal: (url: string, allowInternationalSources?: boolean) => Promise<boolean>;
   notify: (title: string, body: string) => void;
 };
 
