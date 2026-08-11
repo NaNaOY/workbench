@@ -124,7 +124,7 @@ const blockedPatterns = [
 ];
 
 const headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.2.0',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.2.2',
   Accept: 'application/rss+xml,application/xml,text/xml,*/*;q=0.6',
   'Cache-Control': 'no-cache',
 };

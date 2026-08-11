@@ -22,9 +22,11 @@ npm run package:portable
 
 产物写入已被 `.gitignore` 排除的 `release/`：
 
-- `WorkBench-Setup-0.2.1-x64.exe`：标准安装程序；
-- `WorkBench-Portable-0.2.1-x64.exe`：绿色便携版；
+- `WorkBench-Setup-<version>-x64.exe`：标准安装程序；
+- `WorkBench-Portable-<version>-x64.exe`：绿色便携版；
 - `win-unpacked/`：本地调试目录，不用于发布。
+
+具体版本号以 `package.json` 的 `version` 字段为准。
 
 安装包内置 Electron 和渲染层资源，使用者不需要安装 Node.js、npm 或源码仓库。
 

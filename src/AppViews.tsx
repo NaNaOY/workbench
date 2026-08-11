@@ -242,18 +242,21 @@ export function FocusView({
   const progress = ((focusSeconds - secondsLeft) / focusSeconds) * 100;
   const background = focusBackgroundById(focusTodo?.backgroundId);
   const collection = collections.find((item) => item.id === focusTodo?.collectionId);
-  const focusScene = `url("${background.src}")`;
   const heroStyle = {
-    '--focus-scene': focusScene,
     '--focus-accent': background.accent,
-    // Keep the chosen todo scene recognizable while preserving readable white type.
-    backgroundImage: `linear-gradient(105deg, rgba(17, 24, 38, 0.58), rgba(31, 39, 58, 0.20)), ${focusScene}`,
   } as CSSProperties;
   const canStart = Boolean(focusTodo) || isFocusing;
 
   return (
     <div className="focus-layout">
       <section key={focusTodo ? `${focusTodo.id}:${background.id}` : 'focus-empty'} className="focus-hero focus-hero--todo" style={heroStyle}>
+        <img
+          className="focus-hero-scene"
+          src={background.src}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
         <div className="focus-hero-content">
           <span className="focus-scene-label">
             <Clock3 size={14} />

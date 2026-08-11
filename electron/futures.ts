@@ -21,23 +21,6 @@ interface FuturesQuote {
   stale: boolean;
 }
 
-interface FuturesTrendPoint {
-  time: string;
-  price: number;
-  average: number | null;
-  volume: number;
-}
-
-interface FuturesKlinePoint {
-  date: string;
-  open: number;
-  close: number;
-  high: number;
-  low: number;
-  volume: number;
-  percent: number;
-}
-
 const CONTRACTS: ContractEndpoint[] = [
   { key: 'lcm', secid: '225.LCM' },
   { key: 'idx', secid: '1.000941' },
@@ -56,11 +39,9 @@ const QUOTE_HOSTS = [
 ];
 
 const quoteCache = new Map<FutureContractKey, FuturesQuote>();
-const trendCache = new Map<FutureContractKey, FuturesTrendPoint[]>();
-const klineCache = new Map<FutureContractKey, FuturesKlinePoint[]>();
 
 const headers = {
-  'User-Agent': 'WorkBench-Desktop/0.2.0',
+  'User-Agent': 'WorkBench-Desktop/0.2.2',
   Accept: 'application/json,text/plain,*/*',
   Referer: 'https://quote.eastmoney.com/',
 };
@@ -87,7 +68,7 @@ async function fetchJson(url: string, timeout = 12_000) {
   }
 }
 
-async function fetchQuote(contract: ContractEndpoint) {
+async function fetchQuote(contract: ContractEndpoint, allowCached = true) {
   for (const host of QUOTE_HOSTS) {
     try {
       const params = new URLSearchParams({
@@ -119,95 +100,17 @@ async function fetchQuote(contract: ContractEndpoint) {
       // Try the next public quote node.
     }
   }
-  const cached = quoteCache.get(contract.key);
+  const cached = allowCached ? quoteCache.get(contract.key) : undefined;
   return cached ? { ...cached, stale: true } : null;
 }
 
-async function fetchTrend(contract: ContractEndpoint) {
-  try {
-    const params = new URLSearchParams({
-      secid: contract.secid,
-      fields1: 'f1,f2,f3,f4,f5,f6,f7,f8',
-      fields2: 'f51,f52,f53,f54,f55,f56,f57,f58',
-      iscr: '0',
-      ndays: '1',
-      refresh: Date.now().toString(),
-    });
-    const payload = await fetchJson(`https://push2his.eastmoney.com/api/qt/stock/trends2/get?${params.toString()}`);
-    const data = payload.data as { trends?: unknown } | null | undefined;
-    const raw = Array.isArray(data?.trends) ? data.trends : [];
-    const trend = raw.flatMap((item) => {
-      const parts = String(item).split(',');
-      const price = Number(parts[2]);
-      if (parts.length < 8 || !Number.isFinite(price)) return [];
-      const average = Number(parts[7]);
-      return [{
-        time: parts[0],
-        price,
-        average: Number.isFinite(average) ? average : null,
-        volume: numberValue(parts[5]),
-      } satisfies FuturesTrendPoint];
-    });
-    if (trend.length) trendCache.set(contract.key, trend);
-    return trend;
-  } catch {
-    return trendCache.get(contract.key) ?? [];
-  }
-}
-
-async function fetchDailyKline(contract: ContractEndpoint) {
-  try {
-    const params = new URLSearchParams({
-      secid: contract.secid,
-      fields1: 'f1,f2,f3,f4,f5,f6',
-      fields2: 'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61',
-      klt: '101',
-      fqt: '1',
-      beg: '0',
-      end: '20500000',
-      lmt: '120',
-      refresh: Date.now().toString(),
-    });
-    const payload = await fetchJson(`https://push2his.eastmoney.com/api/qt/stock/kline/get?${params.toString()}`);
-    const data = payload.data as { klines?: unknown } | null | undefined;
-    const raw = Array.isArray(data?.klines) ? data.klines : [];
-    const dailyK = raw.flatMap((item) => {
-      const parts = String(item).split(',');
-      const open = Number(parts[1]);
-      const close = Number(parts[2]);
-      const high = Number(parts[3]);
-      const low = Number(parts[4]);
-      if (parts.length < 9 || ![open, close, high, low].every(Number.isFinite)) return [];
-      return [{
-        date: parts[0],
-        open,
-        close,
-        high,
-        low,
-        volume: numberValue(parts[5]),
-        percent: numberValue(parts[8]),
-      } satisfies FuturesKlinePoint];
-    }).slice(-120);
-    if (dailyK.length) klineCache.set(contract.key, dailyK);
-    return dailyK;
-  } catch {
-    return klineCache.get(contract.key) ?? [];
-  }
-}
-
-async function fetchFuturesMarket(selectedKey: FutureContractKey) {
+async function fetchFuturesMarket(selectedKey: FutureContractKey, force = false) {
   const selected = CONTRACTS.find((contract) => contract.key === selectedKey) ?? CONTRACTS[0];
-  const [quoteResults, trend, dailyK] = await Promise.all([
-    Promise.all(CONTRACTS.map(fetchQuote)),
-    fetchTrend(selected),
-    fetchDailyKline(selected),
-  ]);
+  const quoteResults = await Promise.all(CONTRACTS.map((contract) => fetchQuote(contract, !force)));
   const quotes = quoteResults.filter((quote): quote is FuturesQuote => Boolean(quote));
   if (!quotes.length) throw new Error('暂时无法连接行情节点，请稍后重试。');
   return {
     quotes,
-    trend,
-    dailyK,
     selectedKey: selected.key,
     fetchedAt: new Date().toISOString(),
     source: '东方财富公开行情',
@@ -216,8 +119,8 @@ async function fetchFuturesMarket(selectedKey: FutureContractKey) {
 }
 
 export function registerFuturesIpc() {
-  ipcMain.handle('futures:get-market', (_event, rawKey: unknown) => {
+  ipcMain.handle('futures:get-market', (_event, rawKey: unknown, rawForce: unknown) => {
     const selected = CONTRACTS.find((contract) => contract.key === rawKey)?.key ?? 'lcm';
-    return fetchFuturesMarket(selected);
+    return fetchFuturesMarket(selected, rawForce === true);
   });
 }

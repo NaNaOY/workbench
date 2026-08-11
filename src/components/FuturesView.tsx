@@ -20,18 +20,6 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  ComposedChart,
-  CartesianGrid,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import { AppSelect } from './AppSelect';
 import { FUTURE_CONTRACTS, FutureContractConfig, FutureContractKey, FutureThreshold, futureContractByKey } from '../futures-config';
 
@@ -49,36 +37,12 @@ interface FuturesQuote {
   stale: boolean;
 }
 
-interface FuturesTrendPoint {
-  time: string;
-  price: number;
-  average: number | null;
-  volume: number;
-}
-
-interface FuturesKlinePoint {
-  date: string;
-  open: number;
-  close: number;
-  high: number;
-  low: number;
-  volume: number;
-  percent: number;
-}
-
-interface FuturesKlineChartPoint extends FuturesKlinePoint {
-  range: [number, number];
-}
-
 interface FuturesMarketResponse {
   quotes: FuturesQuote[];
-  trend: FuturesTrendPoint[];
-  dailyK: FuturesKlinePoint[];
   selectedKey: FutureContractKey;
   fetchedAt: string;
   source: string;
   partial: boolean;
-  demo?: boolean;
 }
 
 interface FuturesCustomAlert {
@@ -90,87 +54,46 @@ interface FuturesCustomAlert {
   enabled: boolean;
 }
 
-interface DailyHistoryPoint {
-  date: string;
-  price: number;
-}
-
-type DailyHistory = Partial<Record<FutureContractKey, DailyHistoryPoint[]>>;
-type ChartRange = 'intraday' | 'daily' | 'history';
-
 const ALERTS_KEY = 'workbench.futures.alerts.v1';
-const HISTORY_KEY = 'workbench.futures.history.v1';
 const AUTO_KEY = 'workbench.futures.auto-refresh.v1';
+const LEGACY_HISTORY_KEY = 'workbench.futures.history.v1';
 const SIX_FLUORO_PRICE_URL = 'https://www.100ppi.com/rawmex/detail-1773.html';
 
-const demoValues: Record<FutureContractKey, [number, number, number, number, number]> = {
-  lcm: [144860, 146500, 144200, 146360, 0.36],
-  idx: [2341.48, 2345.91, 2291.62, 2309.07, 1.40],
-  psm: [36835, 37260, 36140, 36520, 0.82],
-  sim: [8625, 8730, 8540, 8610, 0.17],
-  sam: [993, 1011, 982, 997, -0.40],
-  fgm: [1068, 1080, 1049, 1056, 1.14],
-  cum: [80620, 81220, 79880, 80340, 0.35],
-};
-
-function fallbackMarket(selectedKey: FutureContractKey): FuturesMarketResponse {
-  const now = new Date();
-  const quotes = FUTURE_CONTRACTS.map((contract) => {
-    const [price, high, low, open, percent] = demoValues[contract.key];
-    const previousClose = price / (1 + percent / 100);
-    return {
-      key: contract.key,
-      price,
-      high,
-      low,
-      open,
-      previousClose,
-      percent,
-      name: contract.name,
-      code: contract.code,
-      marketTime: now.toISOString(),
-      stale: false,
-    } satisfies FuturesQuote;
-  });
-  const quote = quotes.find((item) => item.key === selectedKey) ?? quotes[0];
-  const trend = Array.from({ length: 36 }, (_, index) => {
-    const progress = index / 35;
-    const base = quote.open + (quote.price - quote.open) * progress;
-    const amplitude = Math.max(quote.price * 0.002, 1);
-    return {
-      time: `${now.toISOString().slice(0, 10)} ${String(9 + Math.floor(index / 12)).padStart(2, '0')}:${String((index % 12) * 5).padStart(2, '0')}`,
-      price: base + Math.sin(index * 0.72) * amplitude,
-      average: base,
-      volume: 0,
-    };
-  });
-  const dailyK = Array.from({ length: 60 }, (_, index) => {
-    const progress = index / 59;
-    const center = quote.price * (0.92 + progress * 0.08 + Math.sin(index * 0.31) * 0.012);
-    const open = center * (1 + Math.sin(index * 0.77) * 0.004);
-    const close = center * (1 + Math.cos(index * 0.63) * 0.004);
-    const date = new Date(now);
-    date.setDate(date.getDate() - (59 - index));
-    return {
-      date: date.toISOString().slice(0, 10),
-      open,
-      close,
-      high: Math.max(open, close) * 1.007,
-      low: Math.min(open, close) * 0.993,
-      volume: 0,
-      percent: ((close - open) / open) * 100,
-    } satisfies FuturesKlinePoint;
-  });
+function emptyMarket(selectedKey: FutureContractKey): FuturesMarketResponse {
   return {
-    quotes,
-    trend,
-    dailyK,
+    quotes: [],
     selectedKey,
-    fetchedAt: now.toISOString(),
-    source: '内置演示快照',
-    partial: false,
-    demo: true,
+    fetchedAt: '',
+    source: '东方财富公开行情',
+    partial: true,
   };
+}
+
+// 东财 K 线图服务对品种代码大小写敏感：郑商所(115)要求大写(SAM/FGM)，上期所(113)/广期所(225)要求小写(cum/lcm)。
+// 一律小写会让郑商所主连返回"暂无数据"占位图，且该占位图是有效 PNG，不会触发 img onError。
+function klineNid(secid: string) {
+  const [market, symbol] = secid.split('.');
+  if (!market || !symbol) return secid.toLowerCase();
+  const normalizedSymbol = market === '115' ? symbol.toUpperCase() : symbol.toLowerCase();
+  return `${market}.${normalizedSymbol}`;
+}
+
+function officialKlineUrl(secid: string, revision: number) {
+  const params = new URLSearchParams({
+    nid: klineNid(secid),
+    type: '',
+    unitWidth: '-6',
+    ef: '',
+    formula: 'RSI',
+    AT: '1',
+    imageType: 'KXL',
+    timespan: String(Math.floor(revision / 1000)),
+  });
+  return `https://webquoteklinepic.eastmoney.com/GetPic.aspx?${params.toString()}`;
+}
+
+function officialQuoteUrl(secid: string) {
+  return `https://quote.eastmoney.com/unify/r/${secid.toLowerCase()}`;
 }
 
 function readAlerts(): FuturesCustomAlert[] {
@@ -195,29 +118,6 @@ function readAlerts(): FuturesCustomAlert[] {
   } catch {
     return [];
   }
-}
-
-function readHistory(): DailyHistory {
-  try {
-    const value = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}') as DailyHistory;
-    return value && typeof value === 'object' ? value : {};
-  } catch {
-    return {};
-  }
-}
-
-function recordDailyHistory(quotes: FuturesQuote[]) {
-  const history = readHistory();
-  quotes.forEach((quote) => {
-    const date = quote.marketTime.slice(0, 10);
-    const points = [...(history[quote.key] ?? [])];
-    const last = points.at(-1);
-    if (last?.date === date) last.price = quote.price;
-    else points.push({ date, price: quote.price });
-    history[quote.key] = points.slice(-90);
-  });
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  return history;
 }
 
 function formatNumber(value: number, digits = 0) {
@@ -262,70 +162,19 @@ function alertTriggered(alert: FuturesCustomAlert, quote?: FuturesQuote) {
   return alert.direction === 'above' ? quote.price >= alert.value : quote.price <= alert.value;
 }
 
-function FuturesTooltip({ active, payload, label, digits }: { active?: boolean; payload?: Array<{ value?: number; dataKey?: string; color?: string }>; label?: string; digits: number }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="futures-chart-tooltip">
-      <span>{label?.slice(5)}</span>
-      {payload.map((item) => (
-        <strong key={item.dataKey} style={{ color: item.color }}>{item.dataKey === 'average' ? '均价' : '价格'} {formatNumber(Number(item.value ?? 0), digits)}</strong>
-      ))}
-    </div>
-  );
-}
-
-type FuturesCandleProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  payload?: FuturesKlineChartPoint;
-};
-
-function FuturesCandle({ x = 0, y = 0, width = 0, height = 0, payload }: FuturesCandleProps) {
-  if (!payload || width <= 0 || height < 0) return null;
-  const changeUp = payload.close >= payload.open;
-  const color = changeUp ? '#c44d5c' : '#388466';
-  const span = Math.max(payload.high - payload.low, Number.EPSILON);
-  const unit = height / span;
-  const openY = y + (payload.high - payload.open) * unit;
-  const closeY = y + (payload.high - payload.close) * unit;
-  const centerX = x + width / 2;
-  const bodyWidth = Math.max(2, Math.min(width * 0.62, 11));
-  const bodyY = Math.min(openY, closeY);
-  const bodyHeight = Math.max(1.5, Math.abs(closeY - openY));
-  return (
-    <g aria-hidden="true">
-      <line x1={centerX} x2={centerX} y1={y} y2={y + height} stroke={color} strokeWidth={1.1} />
-      <rect x={centerX - bodyWidth / 2} y={bodyY} width={bodyWidth} height={bodyHeight} rx={1} fill={color} />
-    </g>
-  );
-}
-
-function FuturesKlineTooltip({ active, payload, digits }: { active?: boolean; payload?: Array<{ payload?: FuturesKlineChartPoint }>; digits: number }) {
-  const point = payload?.[0]?.payload;
-  if (!active || !point) return null;
-  return (
-    <div className="futures-chart-tooltip futures-kline-tooltip">
-      <span>{point.date}</span>
-      <div><span>开 {formatNumber(point.open, digits)}</span><span>高 {formatNumber(point.high, digits)}</span></div>
-      <div><span>收 {formatNumber(point.close, digits)}</span><span>低 {formatNumber(point.low, digits)}</span></div>
-      <strong className={point.close >= point.open ? 'up' : 'down'}>{point.percent >= 0 ? '+' : ''}{point.percent.toFixed(2)}%</strong>
-    </div>
-  );
-}
-
 export function FuturesView() {
   const [selectedKey, setSelectedKey] = useState<FutureContractKey>('lcm');
-  const [market, setMarket] = useState<FuturesMarketResponse>(() => fallbackMarket('lcm'));
+  const [market, setMarket] = useState<FuturesMarketResponse>(() => emptyMarket('lcm'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(() => localStorage.getItem(AUTO_KEY) !== 'off');
-  const [chartRange, setChartRange] = useState<ChartRange>('intraday');
-  const [history, setHistory] = useState<DailyHistory>(() => readHistory());
+  const [klineRevision, setKlineRevision] = useState(() => Date.now());
+  const [klineLoading, setKlineLoading] = useState(true);
+  const [klineError, setKlineError] = useState('');
   const [alerts, setAlerts] = useState<FuturesCustomAlert[]>(() => readAlerts());
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [alertDraft, setAlertDraft] = useState({ contractKey: 'lcm' as FutureContractKey, direction: 'below' as 'above' | 'below', value: '120000', label: '价格红线提醒' });
+  const requestId = useRef(0);
   const notifiedAlerts = useRef(new Set<string>());
   const notifiedPresetThresholds = useRef(new Set<string>());
 
@@ -335,31 +184,45 @@ export function FuturesView() {
   const signal = signalFor(contract, quote?.price ?? 0);
   const triggeredAlerts = alerts.filter((alert) => alertTriggered(alert, quotesByKey.get(alert.contractKey)));
 
-  const loadMarket = useCallback(async (silent = false) => {
+  const loadMarket = useCallback(async (silent = false, force = false) => {
+    const currentRequest = ++requestId.current;
     if (!silent) setLoading(true);
+    setKlineRevision(Date.now());
+    setKlineLoading(true);
+    setKlineError('');
     try {
-      const response = window.desktop?.getFuturesMarket
-        ? await window.desktop.getFuturesMarket(selectedKey) as FuturesMarketResponse
-        : fallbackMarket(selectedKey);
-      setMarket(response);
-      setHistory(recordDailyHistory(response.quotes));
-      setError(response.partial ? '部分行情节点暂时不可用，已保留最近一次有效数据。' : '');
+      if (!window.desktop?.getFuturesMarket) throw new Error('桌面行情服务未就绪，请重新启动应用。');
+      const response = await window.desktop.getFuturesMarket(selectedKey, force) as FuturesMarketResponse;
+      if (currentRequest !== requestId.current) return;
+      setMarket((current) => {
+        if (!response.partial) return response;
+        const freshKeys = new Set(response.quotes.map((item) => item.key));
+        const retained = current.quotes
+          .filter((item) => !freshKeys.has(item.key))
+          .map((item) => ({ ...item, stale: true }));
+        return { ...response, quotes: [...response.quotes, ...retained] };
+      });
+      setError(response.partial ? '部分标的本次未返回，页面保留了已有报价并标记为延迟。' : '');
     } catch (reason) {
+      if (currentRequest !== requestId.current) return;
       setError(reason instanceof Error ? reason.message : '行情刷新失败，请稍后重试。');
-      setMarket((current) => current.quotes.length ? current : fallbackMarket(selectedKey));
     } finally {
-      if (!silent) setLoading(false);
+      if (currentRequest === requestId.current && !silent) setLoading(false);
     }
   }, [selectedKey]);
 
   useEffect(() => {
-    void loadMarket(false);
+    void loadMarket(false, true);
   }, [loadMarket]);
+
+  useEffect(() => {
+    localStorage.removeItem(LEGACY_HISTORY_KEY);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(AUTO_KEY, autoRefresh ? 'on' : 'off');
     if (!autoRefresh) return;
-    const timer = window.setInterval(() => void loadMarket(true), 60_000);
+    const timer = window.setInterval(() => void loadMarket(true, true), 60_000);
     return () => window.clearInterval(timer);
   }, [autoRefresh, loadMarket]);
 
@@ -404,27 +267,8 @@ export function FuturesView() {
     });
   }, [quotesByKey]);
 
-  const dailyChartData = useMemo<FuturesKlineChartPoint[]>(() => market.dailyK.map((point) => ({
-    ...point,
-    range: [point.low, point.high],
-  })), [market.dailyK]);
-
-  const chartData = useMemo<Array<{ time: string; price: number; average: number | null; volume?: number }>>(() => {
-    if (chartRange === 'history') return (history[selectedKey] ?? []).map((point) => ({ time: point.date, price: point.price, average: null }));
-    return market.trend.map((point) => ({ ...point, time: point.time }));
-  }, [chartRange, history, market.trend, selectedKey]);
-
-  const chartDomain = useMemo(() => {
-    const prices = chartRange === 'daily'
-      ? dailyChartData.flatMap((point) => [point.low, point.high])
-      : chartData.map((point) => Number(point.price));
-    const validPrices = prices.filter(Number.isFinite);
-    if (!validPrices.length) return ['auto', 'auto'] as const;
-    const min = Math.min(...validPrices);
-    const max = Math.max(...validPrices);
-    const padding = Math.max((max - min) * 0.12, max * 0.003);
-    return [Math.floor(min - padding), Math.ceil(max + padding)] as const;
-  }, [chartData, chartRange, dailyChartData]);
+  const klineImageUrl = useMemo(() => officialKlineUrl(contract.secid, klineRevision), [contract.secid, klineRevision]);
+  const marketReady = market.quotes.length > 0;
 
   function submitAlert(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -449,6 +293,15 @@ export function FuturesView() {
     window.open(SIX_FLUORO_PRICE_URL, '_blank', 'noopener,noreferrer');
   }
 
+  function openOfficialQuote() {
+    const url = officialQuoteUrl(contract.secid);
+    if (window.desktop?.openExternal) {
+      void window.desktop.openExternal(url);
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   const priceChange = quote ? quote.price - quote.previousClose : 0;
   const isUp = (quote?.percent ?? 0) >= 0;
   const progress = contract.scale && quote
@@ -462,18 +315,18 @@ export function FuturesView() {
           <span className="futures-live-mark"><i /> 行情监控</span>
           <div>
             <strong>新能源与工业品期货</strong>
-            <small>主连合约 · 分时与日 K · 红线预警 · 本地历史</small>
+            <small>主连合约 · 官方日 K · 红线预警</small>
           </div>
         </div>
         <div className="futures-source-state">
-          {market.demo ? <WifiOff size={16} /> : <Wifi size={16} />}
-          <span><strong>{market.demo ? '演示快照' : market.source}</strong><small>{formatClock(market.fetchedAt)} 更新</small></span>
+          {marketReady ? <Wifi size={16} /> : <WifiOff size={16} />}
+          <span><strong>{market.source}</strong><small>{market.fetchedAt ? `${formatClock(market.fetchedAt)} 更新` : '等待首次更新'}</small></span>
         </div>
         <div className="futures-status-actions">
           <button type="button" className={autoRefresh ? 'active' : ''} onClick={() => setAutoRefresh((value) => !value)}>
             <Clock3 size={15} /> 自动刷新 {autoRefresh ? '开' : '关'}
           </button>
-          <button type="button" onClick={() => void loadMarket(false)} disabled={loading}>
+          <button type="button" onClick={() => void loadMarket(false, true)} disabled={loading}>
             <RefreshCw size={15} className={loading ? 'spin' : ''} /> {loading ? '刷新中' : '立即刷新'}
           </button>
         </div>
@@ -537,52 +390,40 @@ export function FuturesView() {
             </div>
           </header>
 
-          <div className="futures-chart-tabs" role="tablist" aria-label="图表周期">
-            <button type="button" role="tab" aria-selected={chartRange === 'intraday'} className={chartRange === 'intraday' ? 'active' : ''} onClick={() => setChartRange('intraday')}>今日分时</button>
-            <button type="button" role="tab" aria-selected={chartRange === 'daily'} className={chartRange === 'daily' ? 'active' : ''} onClick={() => setChartRange('daily')}>日 K</button>
-            <button type="button" role="tab" aria-selected={chartRange === 'history'} className={chartRange === 'history' ? 'active' : ''} onClick={() => setChartRange('history')}>本地 90 日</button>
-            <span>{chartRange === 'intraday'
-              ? `${market.trend.length} 个真实分时点`
-              : chartRange === 'daily'
-                ? `${market.dailyK.length} 个真实交易日`
-                : `${history[selectedKey]?.length ?? 0} 个本地交易日`}</span>
+          <div className="futures-chart-source">
+            <div>
+              <span>OFFICIAL DAILY K</span>
+              <strong>东方财富行情页 · {contract.code} 主连</strong>
+              <small>图表由行情源生成，刷新与切换标的时同步更新。</small>
+            </div>
+            <button type="button" onClick={openOfficialQuote}>查看行情源 <ExternalLink size={14} /></button>
           </div>
 
-          <div className="futures-chart-wrap">
-            {chartRange === 'daily' ? (
-              dailyChartData.length > 1 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dailyChartData} margin={{ top: 12, right: 8, bottom: 0, left: 2 }} barCategoryGap="18%">
-                    <CartesianGrid vertical={false} stroke="#e8ebf2" strokeDasharray="3 6" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#8c94a4', fontSize: 11 }} minTickGap={46} tickFormatter={(value) => String(value).slice(5)} />
-                    <YAxis domain={chartDomain} axisLine={false} tickLine={false} tick={{ fill: '#8c94a4', fontSize: 11 }} width={62} tickFormatter={(value) => formatNumber(Number(value), contract.digits)} />
-                    <Tooltip content={<FuturesKlineTooltip digits={contract.digits} />} cursor={{ fill: 'rgba(98, 107, 210, 0.05)' }} />
-                    <Bar dataKey="range" shape={(props) => <FuturesCandle {...(props as unknown as FuturesCandleProps)} />} isAnimationActive={false} />
-                    {contract.thresholds.map((threshold) => (
-                      <ReferenceLine key={threshold.value} y={threshold.value} stroke={threshold.tone === 'danger' ? '#cf5c68' : threshold.tone === 'positive' ? '#4c9b78' : '#c49343'} strokeDasharray="4 5" label={{ value: threshold.label, position: 'insideTopRight', fill: '#767f90', fontSize: 10 }} />
-                    ))}
-                  </ComposedChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="futures-chart-empty"><ChartNoAxesCombined size={25} /><strong>日 K 数据暂时不可用</strong><span>刷新后会再次尝试读取公开历史行情。</span></div>
-              )
-            ) : chartData.length > 1 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 12, right: 8, bottom: 0, left: 2 }}>
-                  <CartesianGrid vertical={false} stroke="#e8ebf2" strokeDasharray="3 6" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#8c94a4', fontSize: 11 }} minTickGap={46} tickFormatter={(value) => chartRange === 'intraday' ? String(value).slice(11, 16) : String(value).slice(5)} />
-                  <YAxis domain={chartDomain} axisLine={false} tickLine={false} tick={{ fill: '#8c94a4', fontSize: 11 }} width={62} tickFormatter={(value) => formatNumber(Number(value), contract.digits)} />
-                  <Tooltip content={<FuturesTooltip digits={contract.digits} />} cursor={{ stroke: '#8f98c6', strokeDasharray: '3 4' }} />
-                  {chartRange === 'intraday' && <Area type="monotone" dataKey="average" stroke="#c39448" fill="none" strokeWidth={1.2} dot={false} connectNulls />}
-                  <Area type="monotone" dataKey="price" stroke={contract.color} fill={contract.color} fillOpacity={0.12} strokeWidth={2.2} dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: '#fff' }} />
-                  {contract.thresholds.map((threshold) => (
-                    <ReferenceLine key={threshold.value} y={threshold.value} stroke={threshold.tone === 'danger' ? '#cf5c68' : threshold.tone === 'positive' ? '#4c9b78' : '#c49343'} strokeDasharray="4 5" label={{ value: threshold.label, position: 'insideTopRight', fill: '#767f90', fontSize: 10 }} />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="futures-chart-empty"><ChartNoAxesCombined size={25} /><strong>历史曲线正在积累</strong><span>每天打开一次，工作台会自动保留当天收盘快照。</span></div>
+          <div className="futures-chart-wrap futures-official-kline">
+            {klineLoading && (
+              <div className="futures-kline-loading" role="status" aria-live="polite">
+                <RefreshCw size={18} className="spin" />
+                <span>正在同步官方日 K 图...</span>
+              </div>
             )}
+            {klineError && !klineLoading && (
+              <div className="futures-chart-empty futures-kline-error">
+                <ChartNoAxesCombined size={25} />
+                <strong>官方日 K 暂时无法载入</strong>
+                <span>{klineError}</span>
+                <button type="button" onClick={() => { setKlineError(''); setKlineLoading(true); setKlineRevision(Date.now()); }}>重试同步</button>
+              </div>
+            )}
+            <img
+              key={`${contract.secid}:${klineRevision}`}
+              className={klineLoading || klineError ? 'is-pending' : ''}
+              src={klineImageUrl}
+              alt={`${contract.name}官方日 K 线图`}
+              referrerPolicy="no-referrer"
+              draggable={false}
+              onLoad={() => { setKlineLoading(false); setKlineError(''); }}
+              onError={() => { setKlineLoading(false); setKlineError('请检查网络后重试，或打开行情源查看。'); }}
+            />
           </div>
 
           <div className="futures-quote-metrics">

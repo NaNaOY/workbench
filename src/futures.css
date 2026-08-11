@@ -337,51 +337,109 @@
 .futures-main-price > span { color: #8a92a1; font-size: 11px; }
 .futures-main-price > small { grid-column: 1 / -1; margin-top: 7px; display: inline-flex; justify-content: flex-end; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }
 
-.futures-chart-tabs {
-  min-height: 48px;
-  margin-top: 12px;
+.futures-chart-source {
+  min-height: 58px;
+  margin-top: 10px;
+  padding: 8px 2px;
   border-bottom: 1px solid #e8eaf0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.futures-chart-tabs button {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: #7d8594;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.futures-chart-tabs button:hover { background: #f4f5f8; }
-.futures-chart-tabs button.active { background: #eceeff; color: #575fc2; }
-.futures-chart-tabs > span { margin-left: auto; color: #979eac; font-size: 10.5px; }
-
-.futures-chart-wrap { min-width: 0; min-height: 270px; padding-top: 12px; }
-
-.futures-chart-tooltip {
-  padding: 9px 11px;
-  border: 1px solid #dfe2ea;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 25px rgba(34, 42, 61, 0.12);
+.futures-chart-source > div {
+  min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
-.futures-chart-tooltip span { color: #8b93a1; font-size: 10px; }
-.futures-chart-tooltip strong { font-size: 11px; font-variant-numeric: tabular-nums; }
-.futures-kline-tooltip { min-width: 164px; }
-.futures-kline-tooltip > div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.futures-kline-tooltip > div > span { color: #596273; font-size: 10.5px; font-variant-numeric: tabular-nums; }
-.futures-kline-tooltip > strong.up { color: var(--futures-up); }
-.futures-kline-tooltip > strong.down { color: var(--futures-down); }
+.futures-chart-source span {
+  color: #727bd0;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.futures-chart-source strong {
+  overflow: hidden;
+  color: #343c4c;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.futures-chart-source small {
+  color: #9299a7;
+  font-size: 10px;
+}
+
+.futures-chart-source button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dfe2ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #6069c9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.futures-chart-source button:hover {
+  border-color: #c9cdee;
+  box-shadow: 0 7px 18px rgba(81, 91, 172, .1);
+  transform: translateY(-1px);
+}
+
+.futures-chart-wrap {
+  min-width: 0;
+  min-height: 270px;
+  padding-top: 12px;
+}
+
+.futures-official-kline {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fbfcff, #f5f7fb);
+  display: grid;
+  place-items: center;
+}
+
+.futures-official-kline > img {
+  width: 100%;
+  height: 100%;
+  min-height: 270px;
+  object-fit: contain;
+  object-position: center;
+  transition: opacity 180ms ease;
+}
+
+.futures-official-kline > img.is-pending {
+  opacity: 0;
+}
+
+.futures-kline-loading {
+  position: absolute;
+  z-index: 2;
+  inset: 12px 0 0;
+  background: linear-gradient(145deg, rgba(251, 252, 255, .98), rgba(245, 247, 251, .98));
+  color: #727b90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 650;
+}
 
 .futures-chart-empty {
   height: 100%;
@@ -394,9 +452,36 @@
   gap: 7px;
   text-align: center;
 }
-.futures-chart-empty strong { color: #50596a; font-size: 13px; }
-.futures-chart-empty span { font-size: 11px; }
 
+.futures-chart-empty strong {
+  color: #50596a;
+  font-size: 13px;
+}
+
+.futures-chart-empty span {
+  font-size: 11px;
+}
+
+.futures-kline-error {
+  position: absolute;
+  z-index: 3;
+  inset: 12px 0 0;
+  background: #fbfbfd;
+}
+
+.futures-kline-error button {
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 0 13px;
+  border: 1px solid #dfe2ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #6069c9;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
 .futures-quote-metrics {
   min-height: 58px;
   padding-top: 12px;

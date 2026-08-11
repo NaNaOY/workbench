@@ -107,6 +107,7 @@ kbd { padding: 2px 5px; border: 1px solid #d9dce6; border-bottom-width: 2px; bor
 .app-select-trigger b { color: #59647d; font-size: 17px; font-weight: 700; line-height: 1; transform: translateY(-1px); }
 .app-select.is-open .app-select-trigger b { transform: rotate(180deg) translateY(1px); }
 .app-select-menu { position: absolute; z-index: 30; top: calc(100% + 7px); right: 0; left: 0; display: grid; gap: 3px; padding: 6px; border: 1px solid #d6dbea; border-radius: 11px; background: rgba(255, 255, 255, .98); box-shadow: 0 15px 32px rgba(33, 40, 66, .16); }
+.app-select[data-placement='above'] .app-select-menu { top: auto; bottom: calc(100% + 7px); transform-origin: bottom; }
 .app-select-menu button { display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 0 10px; border-radius: 7px; background: transparent; color: #505a72; font-size: 12px; text-align: left; }
 .app-select-menu button:hover, .app-select-menu button.selected { background: #eef0ff; color: #4b58c1; }
 .app-select-menu button b { font-size: 12px; }

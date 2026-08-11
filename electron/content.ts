@@ -19,7 +19,7 @@ const feedSources: FeedSource[] = [
 ];
 
 const requestHeaders = {
-  'User-Agent': 'WorkBench-Desktop/0.2.0',
+  'User-Agent': 'WorkBench-Desktop/0.2.2',
   Accept: 'application/xml,text/xml,application/atom+xml,application/rss+xml,text/html;q=0.8,*/*;q=0.5',
 };
 
@@ -82,7 +82,7 @@ async function fetchGitHubRanking(request: GitHubRankingRequest) {
   const response = await fetchWithTimeout(
     `https://api.github.com/search/repositories?${params.toString()}`,
     {
-      'User-Agent': 'WorkBench-Desktop/0.2.0',
+      'User-Agent': 'WorkBench-Desktop/0.2.2',
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },
