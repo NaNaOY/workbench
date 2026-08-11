@@ -14,6 +14,7 @@
 - npm run typecheck
 - npm run build
 - electron-builder --win（NSIS 安装版）
+- electron-builder --config electron-builder.portable.json（便携版）
 - 东方财富 K 线图接口实测：`115.SAM` / `115.FGM` 返回真实 K 线图。
 
 ## 发布物
@@ -26,4 +27,4 @@
 ## SHA-256 校验
 
 - WorkBench-Setup-0.2.2-x64.exe：3B2E142CE58FDDB57A26D13139BBF1187123C7CA97B6A1AE7B3ED05390C0B199
-- WorkBench-Portable-0.2.2-x64.exe：（生成后补充）
+- WorkBench-Portable-0.2.2-x64.exe：E8C0EDE86C342C0A8014A02C925EAD9C1F7A8A0F8A7D63938A4B5D72267D2F4A
