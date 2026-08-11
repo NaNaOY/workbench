@@ -1,40 +1,43 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
+  BookOpen,
   BrainCircuit,
+  ChartCandlestick,
   CircleCheck,
   Github,
   LayoutDashboard,
   Link2,
-  ListTodo,
+  ClipboardList,
   NotebookPen,
   Plus,
   Timer,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import { createId, loadWorkspace, localDateKey, saveWorkspace } from './data';
-import { Bookmark, Note, Priority, Task, TaskStatus, WorkspaceData } from './types';
-import { AppSelect, BookmarksView, DashboardView, FocusView, NotesView, TasksView } from './AppViews';
+import { Bookmark, LedgerCategory, LedgerEntry, Note, Problem, TodayTodo, WorkspaceData } from './types';
+import { TODO_COLLECTION_COLORS } from './todo-config';
+import { BookmarksView, DashboardView, FocusView, NotesView } from './AppViews';
 import { GitHubRankingView } from './KnowledgeViews';
+import { ProblemsView } from './components/ProblemsView';
 import DailyCognitionView from './DailyCognitionView';
+import { LedgerView } from './components/LedgerView';
+import { FuturesView } from './components/FuturesView';
 
-type View = 'dashboard' | 'growth' | 'github' | 'tasks' | 'notes' | 'focus' | 'bookmarks';
+type View = 'dashboard' | 'growth' | 'github' | 'futures' | 'ledger' | 'notes' | 'focus' | 'bookmarks' | 'problems';
 
 const navItems: Array<{ id: View; label: string; icon: LucideIcon }> = [
   { id: 'growth', label: '每日认知', icon: BrainCircuit },
   { id: 'github', label: 'GitHub 干货榜', icon: Github },
+  { id: 'futures', label: '期货面板', icon: ChartCandlestick },
   { id: 'dashboard', label: '工作总览', icon: LayoutDashboard },
-  { id: 'tasks', label: '任务管理', icon: ListTodo },
+  { id: 'ledger', label: '个人台账', icon: ClipboardList },
   { id: 'notes', label: '灵感笔记', icon: NotebookPen },
+  { id: 'problems', label: '信息学题单', icon: BookOpen },
   { id: 'focus', label: '专注模式', icon: Timer },
   { id: 'bookmarks', label: '快捷入口', icon: Link2 },
 ];
 
 const focusSeconds = 25 * 60;
-
-function isoToday() {
-  return localDateKey();
-}
 
 function greeting() {
   const hour = new Date().getHours();
@@ -78,15 +81,15 @@ const BASE_URL = import.meta.env.BASE_URL;
 export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceData>(() => loadWorkspace());
   const [activeView, setActiveView] = useState<View>('dashboard');
-  const [showTaskComposer, setShowTaskComposer] = useState(false);
+  const [ledgerCreateRequest, setLedgerCreateRequest] = useState(0);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(() => loadWorkspace().notes[0]?.id ?? null);
-  const [taskDraft, setTaskDraft] = useState({ title: '', priority: 'medium' as Priority, project: '收件箱', due: isoToday() });
   const [bookmarkDraft, setBookmarkDraft] = useState({ title: '', url: '', description: '' });
   const [showBookmarkComposer, setShowBookmarkComposer] = useState(false);
   const [toast, setToast] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(focusSeconds);
   const [isFocusing, setIsFocusing] = useState(false);
-  const [focusTaskId, setFocusTaskId] = useState('');
+  const [focusTodoId, setFocusTodoId] = useState('');
+  const [selectedTodoCollectionId, setSelectedTodoCollectionId] = useState(() => loadWorkspace().todoCollections[0]?.id ?? '');
   const [storagePath, setStoragePath] = useState('');
 
   const isDesktop = Boolean(window.desktop?.isDesktop);
@@ -100,6 +103,11 @@ export default function App() {
     saveWorkspace(workspace);
     window.desktop?.persistStorage?.();
   }, [workspace]);
+
+  useEffect(() => {
+    if (workspace.todoCollections.some((collection) => collection.id === selectedTodoCollectionId)) return;
+    setSelectedTodoCollectionId(workspace.todoCollections[0]?.id ?? '');
+  }, [selectedTodoCollectionId, workspace.todoCollections]);
 
   useEffect(() => {
     const resetFocusStatsAfterDayChange = () => {
@@ -122,7 +130,8 @@ export default function App() {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') {
         event.preventDefault();
-        setShowTaskComposer(true);
+        setActiveView('ledger');
+        setLedgerCreateRequest((request) => request + 1);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -136,14 +145,29 @@ export default function App() {
         if (current <= 1) {
           setIsFocusing(false);
           setWorkspace((data) => {
-            const today = localDateKey();
+            const completedAt = new Date();
+            const today = localDateKey(completedAt);
             const existingMinutes = data.focusDate === today ? data.focusMinutes : 0;
             const existingSessions = data.focusDate === today ? data.focusSessions : 0;
+            const todo = data.todayTodos.find((item) => item.id === focusTodoId);
+            const collection = data.todoCollections.find((item) => item.id === todo?.collectionId);
             return {
               ...data,
               focusDate: today,
               focusMinutes: existingMinutes + 25,
               focusSessions: existingSessions + 1,
+              focusRecords: [...data.focusRecords, {
+                id: createId('focus'),
+                date: today,
+                completedAt: completedAt.toISOString(),
+                minutes: 25,
+                sessions: 1,
+                todoId: todo?.id,
+                collectionId: collection?.id,
+                backgroundId: todo?.backgroundId,
+                taskTitle: todo?.title ?? '今日待办',
+                project: collection?.name ?? '未分类',
+              }],
             };
           });
           notify('一个专注时段已完成，做得漂亮。');
@@ -153,62 +177,142 @@ export default function App() {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [isFocusing]);
+  }, [isFocusing, focusTodoId]);
 
-  const today = isoToday();
-  const activeTasks = workspace.tasks.filter((task) => task.status !== 'done');
-  const dueToday = activeTasks.filter((task) => task.due === today);
-  const overdue = activeTasks.filter((task) => task.due && task.due < today);
-  const doneTasks = workspace.tasks.filter((task) => task.status === 'done');
-  const completionRate = workspace.tasks.length ? Math.round((doneTasks.length / workspace.tasks.length) * 100) : 0;
+  const completedLedgerEntries = workspace.ledgerEntries.filter((entry) => entry.status === 'completed');
+  const ledgerCompletionRate = workspace.ledgerEntries.length ? Math.round((completedLedgerEntries.length / workspace.ledgerEntries.length) * 100) : 0;
   const selectedNote = workspace.notes.find((note) => note.id === selectedNoteId) ?? workspace.notes[0] ?? null;
-  const focusTask = workspace.tasks.find((task) => task.id === focusTaskId);
-
-  const taskGroups = useMemo(
-    () => [
-      { status: 'todo' as TaskStatus, title: '待处理', hint: '下一步可推进的事项' },
-      { status: 'doing' as TaskStatus, title: '进行中', hint: '正在投入注意力的任务' },
-      { status: 'done' as TaskStatus, title: '已完成', hint: '已完成的成果' },
-    ],
-    [],
-  );
+  const focusTodo = workspace.todayTodos.find((todo) => todo.id === focusTodoId);
+  const focusTodos = workspace.todayTodos.filter((todo) => !todo.completed || todo.id === focusTodoId);
 
   function notify(message: string) {
     setToast(message);
     window.setTimeout(() => setToast(''), 2600);
   }
 
-  function addTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const title = taskDraft.title.trim();
-    if (!title) return;
-    const task: Task = {
-      id: createId('task'),
-      title,
-      status: 'todo',
-      priority: taskDraft.priority,
-      project: taskDraft.project.trim() || '收件箱',
-      due: taskDraft.due,
-    };
-    setWorkspace((data) => ({ ...data, tasks: [task, ...data.tasks] }));
-    setTaskDraft({ title: '', priority: 'medium', project: '收件箱', due: today });
-    setShowTaskComposer(false);
-    setActiveView('tasks');
-    notify('任务已加入工作台。');
+  function openLedgerComposer() {
+    setActiveView('ledger');
+    setLedgerCreateRequest((request) => request + 1);
   }
 
-  function updateTask(id: string, patch: Partial<Task>) {
+  function addLedgerCategory(name: string, color: string) {
+    const id = createId('ledger-category');
+    const category: LedgerCategory = { id, name, color, createdAt: new Date().toISOString() };
+    setWorkspace((data) => ({ ...data, ledgerCategories: [...data.ledgerCategories, category] }));
+    notify('新的台账分类已创建。');
+    return id;
+  }
+
+  function renameLedgerCategory(id: string, name: string) {
     setWorkspace((data) => ({
       ...data,
-      tasks: data.tasks.map((task) => (task.id === id ? { ...task, ...patch } : task)),
+      ledgerCategories: data.ledgerCategories.map((category) => category.id === id ? { ...category, name } : category),
     }));
+    notify('台账分类已重命名。');
   }
 
-  function deleteTask(id: string) {
-    setWorkspace((data) => ({ ...data, tasks: data.tasks.filter((task) => task.id !== id) }));
-    notify('任务已移除。');
+  function deleteLedgerCategory(id: string) {
+    if (workspace.ledgerCategories.length <= 1) return;
+    const category = workspace.ledgerCategories.find((item) => item.id === id);
+    if (!window.confirm(`删除“${category?.name ?? '该分类'}”？其中的记录将移动到其他台账。`)) return;
+    const fallbackId = workspace.ledgerCategories.find((item) => item.id !== id)?.id;
+    if (!fallbackId) return;
+    setWorkspace((data) => ({
+      ...data,
+      ledgerCategories: data.ledgerCategories.filter((item) => item.id !== id),
+      ledgerEntries: data.ledgerEntries.map((entry) => entry.categoryId === id ? { ...entry, categoryId: fallbackId, updatedAt: new Date().toISOString() } : entry),
+    }));
+    notify('台账分类已删除，原记录已安全迁移。');
   }
 
+  function addLedgerEntry(entry: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>) {
+    const now = new Date().toISOString();
+    const nextEntry: LedgerEntry = { ...entry, id: createId('ledger-entry'), createdAt: now, updatedAt: now };
+    setWorkspace((data) => ({ ...data, ledgerEntries: [nextEntry, ...data.ledgerEntries] }));
+    notify('台账记录已保存。');
+  }
+
+  function updateLedgerEntry(id: string, patch: Partial<LedgerEntry>) {
+    setWorkspace((data) => ({
+      ...data,
+      ledgerEntries: data.ledgerEntries.map((entry) => entry.id === id ? { ...entry, ...patch, updatedAt: new Date().toISOString() } : entry),
+    }));
+    notify('台账记录已更新。');
+  }
+
+  function deleteLedgerEntry(id: string) {
+    const entry = workspace.ledgerEntries.find((item) => item.id === id);
+    if (!window.confirm(`确定删除“${entry?.title ?? '这条记录'}”？`)) return;
+    setWorkspace((data) => ({ ...data, ledgerEntries: data.ledgerEntries.filter((item) => item.id !== id) }));
+    notify('台账记录已删除。');
+  }
+  function addTodayTodo(draft: { title: string; collectionId: string; backgroundId: string }) {
+    const todo: TodayTodo = {
+      id: createId('today-todo'),
+      title: draft.title,
+      collectionId: draft.collectionId,
+      backgroundId: draft.backgroundId,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setWorkspace((data) => ({ ...data, todayTodos: [todo, ...data.todayTodos] }));
+    notify('待办已加入当前待办集。');
+  }
+
+  function toggleTodayTodo(id: string) {
+    const current = workspace.todayTodos.find((todo) => todo.id === id);
+    const completing = current ? !current.completed : false;
+    setWorkspace((data) => ({
+      ...data,
+      todayTodos: data.todayTodos.map((todo) => todo.id === id
+        ? { ...todo, completed: !todo.completed, completedAt: todo.completed ? undefined : new Date().toISOString() }
+        : todo),
+    }));
+    if (completing && focusTodoId === id && !isFocusing) setFocusTodoId('');
+    notify(completing ? '待办已完成。' : '待办已恢复。');
+  }
+
+  function deleteTodayTodo(id: string) {
+    setWorkspace((data) => ({ ...data, todayTodos: data.todayTodos.filter((todo) => todo.id !== id) }));
+    if (focusTodoId === id) {
+      setFocusTodoId('');
+      setIsFocusing(false);
+      setSecondsLeft(focusSeconds);
+    }
+    notify('待办已删除。');
+  }
+
+  function addTodoCollection(name: string) {
+    const id = createId('todo-set');
+    const color = TODO_COLLECTION_COLORS[workspace.todoCollections.length % TODO_COLLECTION_COLORS.length];
+    setWorkspace((data) => ({
+      ...data,
+      todoCollections: [...data.todoCollections, { id, name, color, createdAt: new Date().toISOString() }],
+    }));
+    setSelectedTodoCollectionId(id);
+    notify('新的待办集已建立。');
+    return id;
+  }
+
+  function deleteTodoCollection(id: string) {
+    const remaining = workspace.todoCollections.filter((collection) => collection.id !== id);
+    if (!remaining.length) return;
+    const fallbackId = remaining[0].id;
+    setWorkspace((data) => ({
+      ...data,
+      todoCollections: data.todoCollections.filter((collection) => collection.id !== id),
+      todayTodos: data.todayTodos.map((todo) => todo.collectionId === id ? { ...todo, collectionId: fallbackId } : todo),
+    }));
+    if (selectedTodoCollectionId === id) setSelectedTodoCollectionId(fallbackId);
+    notify('待办集已删除，其中的待办已移动到其他目录。');
+  }
+
+  function startFocusForTodo(todoId: string) {
+    setFocusTodoId(todoId);
+    setIsFocusing(false);
+    setSecondsLeft(focusSeconds);
+    setActiveView('focus');
+  }
   function createNote() {
     const note: Note = {
       id: createId('note'),
@@ -260,20 +364,50 @@ export default function App() {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  function addProblem(problem: Omit<Problem, 'id' | 'createdAt' | 'updatedAt'>) {
+    const now = new Date().toISOString();
+    const newProblem: Problem = {
+      ...problem,
+      id: createId('problem'),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setWorkspace((data) => ({ ...data, problems: [newProblem, ...data.problems] }));
+    notify('题目已加入题库。');
+  }
+
+  function updateProblem(id: string, patch: Partial<Problem>) {
+    setWorkspace((data) => ({
+      ...data,
+      problems: data.problems.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p)),
+    }));
+  }
+
+  function deleteProblem(id: string) {
+    setWorkspace((data) => ({ ...data, problems: data.problems.filter((p) => p.id !== id) }));
+    notify('题目已移除。');
+  }
+
   function renderView() {
     switch (activeView) {
       case 'growth':
         return <DailyCognitionView />;
       case 'github':
         return <GitHubRankingView />;
-      case 'tasks':
+      case 'futures':
+        return <FuturesView />;
+      case 'ledger':
         return (
-          <TasksView
-            taskGroups={taskGroups}
-            tasks={workspace.tasks}
-            onUpdate={updateTask}
-            onDelete={deleteTask}
-            onAdd={() => setShowTaskComposer(true)}
+          <LedgerView
+            categories={workspace.ledgerCategories}
+            entries={workspace.ledgerEntries}
+            createRequest={ledgerCreateRequest}
+            onAddCategory={addLedgerCategory}
+            onRenameCategory={renameLedgerCategory}
+            onDeleteCategory={deleteLedgerCategory}
+            onAddEntry={addLedgerEntry}
+            onUpdateEntry={updateLedgerEntry}
+            onDeleteEntry={deleteLedgerEntry}
           />
         );
       case 'notes':
@@ -293,16 +427,35 @@ export default function App() {
           <FocusView
             secondsLeft={secondsLeft}
             isFocusing={isFocusing}
-            focusTaskId={focusTaskId}
-            focusTask={focusTask}
-            tasks={activeTasks}
+            focusTodoId={focusTodoId}
+            focusTodo={focusTodo}
+            todos={focusTodos}
+            collections={workspace.todoCollections}
             focusMinutes={workspace.focusMinutes}
             focusSessions={workspace.focusSessions}
-            onFocusTask={setFocusTaskId}
-            onToggle={() => setIsFocusing((running) => !running)}
+            focusRecords={workspace.focusRecords}
+            onFocusTodo={(id) => {
+              if (isFocusing) {
+                notify('请先暂停当前专注，再切换待办。');
+                return;
+              }
+              setFocusTodoId(id);
+              setSecondsLeft(focusSeconds);
+            }}
+            onToggle={() => {
+              if (!focusTodo) {
+                notify('请先选择一条今日待办。');
+                return;
+              }
+              setIsFocusing((running) => !running);
+            }}
             onReset={() => {
               setIsFocusing(false);
               setSecondsLeft(focusSeconds);
+            }}
+            onOpenTodos={() => {
+              setActiveView('dashboard');
+              window.setTimeout(() => document.getElementById('today-todo-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
             }}
           />
         );
@@ -320,18 +473,35 @@ export default function App() {
             onDelete={(id) => setWorkspace((data) => ({ ...data, bookmarks: data.bookmarks.filter((link) => link.id !== id) }))}
           />
         );
+      case 'problems':
+        return (
+          <ProblemsView
+            problems={workspace.problems}
+            onAdd={addProblem}
+            onUpdate={updateProblem}
+            onDelete={deleteProblem}
+          />
+        );
       case 'dashboard':
       default:
         return (
           <DashboardView
-            tasks={workspace.tasks}
+            ledgerEntries={workspace.ledgerEntries}
             notes={workspace.notes}
             focusMinutes={workspace.focusMinutes}
-            completionRate={completionRate}
-            dueToday={dueToday}
-            overdue={overdue}
-            onTaskDone={(id) => updateTask(id, { status: 'done' })}
-            onOpenTasks={() => setActiveView('tasks')}
+            ledgerCompletionRate={ledgerCompletionRate}
+            todoCollections={workspace.todoCollections}
+            todayTodos={workspace.todayTodos}
+            focusRecords={workspace.focusRecords}
+            selectedTodoCollectionId={selectedTodoCollectionId}
+            onSelectTodoCollection={setSelectedTodoCollectionId}
+            onAddTodayTodo={addTodayTodo}
+            onToggleTodayTodo={toggleTodayTodo}
+            onDeleteTodayTodo={deleteTodayTodo}
+            onAddTodoCollection={addTodoCollection}
+            onDeleteTodoCollection={deleteTodoCollection}
+            onStartFocusTodo={startFocusForTodo}
+            onOpenLedger={() => setActiveView('ledger')}
             onOpenNotes={() => setActiveView('notes')}
             onStartFocus={() => setActiveView('focus')}
           />
@@ -367,7 +537,7 @@ export default function App() {
 
         <div className="sidebar-footer">
           <div className="local-status" title={storagePath || undefined}><span /> {isDesktop ? '本地文件 · 已保存' : '浏览器存储 · 已保存'}</div>
-          <p>{isDesktop ? '任务、笔记与内容缓存保存在本机文件，不受浏览器清理影响。' : '网页版本保存在当前浏览器；桌面版会写入本机文件。'}</p>
+          <p>{isDesktop ? '台账、待办、笔记与内容缓存保存在本机文件，不受浏览器清理影响。' : '网页版本保存在当前浏览器；桌面版会写入本机文件。'}</p>
         </div>
       </aside>
 
@@ -382,51 +552,15 @@ export default function App() {
               <img src={`${BASE_URL}assets/cozy-duck.jpg`} alt="我的头像" />
               <span><strong>我的空间</strong><small>本地工作台</small></span>
             </div>
-            <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建任务</span></div>
-            <button type="button" className="primary-button" onClick={() => setShowTaskComposer(true)}>
-              <Plus size={16} aria-hidden="true" /> 新建任务
+            <div className="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd><span>新建记录</span></div>
+            <button type="button" className="primary-button" onClick={openLedgerComposer}>
+              <Plus size={16} aria-hidden="true" /> 新建记录
             </button>
           </div>
         </header>
 
         <main className="content">{renderView()}</main>
       </section>
-
-      {showTaskComposer && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowTaskComposer(false)}>
-          <form className="task-composer" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="composer-heading">
-              <div>
-                <span className="eyebrow">快速收集</span>
-                <h2>添加一件要事</h2>
-              </div>
-              <button type="button" className="icon-button" aria-label="关闭" onClick={() => setShowTaskComposer(false)}><X size={18} /></button>
-            </div>
-            <label className="field full-field">
-              <span>任务内容</span>
-              <input autoFocus value={taskDraft.title} onChange={(event) => setTaskDraft({ ...taskDraft, title: event.target.value })} placeholder="例如：整理客户反馈并确定下一步" />
-            </label>
-            <div className="form-grid">
-              <label className="field">
-                <span>优先级</span>
-                <AppSelect ariaLabel="选择任务优先级" value={taskDraft.priority} options={[{ value: 'high', label: '高优先级' }, { value: 'medium', label: '中优先级' }, { value: 'low', label: '低优先级' }]} onChange={(value) => setTaskDraft({ ...taskDraft, priority: value as Priority })} />
-              </label>
-              <label className="field">
-                <span>截止日期</span>
-                <input type="date" value={taskDraft.due} onChange={(event) => setTaskDraft({ ...taskDraft, due: event.target.value })} />
-              </label>
-            </div>
-            <label className="field full-field">
-              <span>项目 / 场景</span>
-              <input value={taskDraft.project} onChange={(event) => setTaskDraft({ ...taskDraft, project: event.target.value })} placeholder="收件箱" />
-            </label>
-            <div className="composer-actions">
-              <button type="button" className="text-button" onClick={() => setShowTaskComposer(false)}>取消</button>
-              <button type="submit" className="primary-button">加入任务清单</button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {toast && <div className="toast"><CircleCheck size={18} aria-hidden="true" /> {toast}</div>}
     </div>

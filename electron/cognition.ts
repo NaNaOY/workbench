@@ -1,9 +1,11 @@
 import { net } from 'electron';
+import { normalizeArticleUrl } from './article-url';
 import { parseFeed, type ParsedFeedItem as FeedItem } from './feed';
 import { getLearningContent, type LearningCategoryId } from './learning';
+import { fetchOverseasContent } from './overseas';
 
 export type CognitionCategoryId = 'digest' | LearningCategoryId;
-export type CognitionMode = 'current' | 'growth';
+export type CognitionMode = 'current' | 'growth' | 'overseas';
 
 interface DomesticFeed {
   name: string;
@@ -122,22 +124,13 @@ const blockedPatterns = [
 ];
 
 const headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.1.3',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WorkBench-Desktop/0.2.2',
   Accept: 'application/rss+xml,application/xml,text/xml,*/*;q=0.6',
   'Cache-Control': 'no-cache',
 };
 
 const feedCache = new Map<string, { expiresAt: number; items: FeedItem[] }>();
 const feedCacheDuration = 5 * 60 * 1000;
-
-function safeHttpUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
-  } catch {
-    return '';
-  }
-}
 
 async function requestFeed(feed: DomesticFeed, bypassCache: boolean) {
   const cached = feedCache.get(feed.url);
@@ -159,7 +152,7 @@ async function requestFeed(feed: DomesticFeed, bypassCache: boolean) {
       publishedTags: ['pubDate', 'dc:date', 'date'],
       summaryLength: 320,
       normalizeTitle: (title) => title.replace(/\s+[-_—|]\s*(新华网|人民网|中国新闻网|36氪)$/i, '').trim(),
-      normalizeUrl: safeHttpUrl,
+      normalizeUrl: normalizeArticleUrl,
     });
     if (!items.length) throw new Error(`${feed.name} 暂无可解析内容`);
     feedCache.set(feed.url, { expiresAt: Date.now() + feedCacheDuration, items });
@@ -206,6 +199,8 @@ export async function fetchCognitionContent(
       mode,
     };
   }
+
+  if (mode === 'overseas') return fetchOverseasContent(category, refreshKey);
 
   const selectedBoards = category === 'digest' ? boards : boards.filter((board) => board.id === category);
   const results = await Promise.allSettled(selectedBoards.map((board) => fetchBoard(board, refreshKey > 0)));

@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain, net, Notification, shell } from 'electron';
+import { normalizeArticleUrl } from './article-url';
 import { CognitionCategoryId, CognitionMode, fetchCognitionContent } from './cognition';
 import { parseFeed } from './feed';
 
@@ -18,7 +19,7 @@ const feedSources: FeedSource[] = [
 ];
 
 const requestHeaders = {
-  'User-Agent': 'WorkBench-Desktop/0.1.3',
+  'User-Agent': 'WorkBench-Desktop/0.2.2',
   Accept: 'application/xml,text/xml,application/atom+xml,application/rss+xml,text/html;q=0.8,*/*;q=0.5',
 };
 
@@ -81,7 +82,7 @@ async function fetchGitHubRanking(request: GitHubRankingRequest) {
   const response = await fetchWithTimeout(
     `https://api.github.com/search/repositories?${params.toString()}`,
     {
-      'User-Agent': 'WorkBench-Desktop/0.1.3',
+      'User-Agent': 'WorkBench-Desktop/0.2.2',
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },
@@ -121,18 +122,9 @@ async function fetchGitHubRanking(request: GitHubRankingRequest) {
   };
 }
 
-function isSafeWebUrl(rawUrl: unknown): rawUrl is string {
-  if (typeof rawUrl !== 'string') return false;
-  try {
-    const url = new URL(rawUrl);
-    return url.protocol === 'https:' || url.protocol === 'http:';
-  } catch {
-    return false;
-  }
-}
-
 const dailyCache: Partial<Record<CognitionMode, Awaited<ReturnType<typeof fetchCognitionContent>>>> = {};
 let growthRotation = 0;
+let overseasRotation = 0;
 
 function millisecondsUntilNextEight() {
   const now = new Date();
@@ -147,7 +139,7 @@ async function refreshDailyCache(mode: CognitionMode, showNotification: boolean,
   dailyCache[mode] = response;
   if (showNotification && Notification.isSupported() && response.items[0]) {
     new Notification({
-      title: mode === 'current' ? '每日资讯已更新' : '认知提升已更新',
+      title: mode === 'current' ? '每日资讯已更新' : mode === 'growth' ? '认知提升已更新' : 'Google 知识已更新',
       body: response.items[0].title.slice(0, 180),
     }).show();
   }
@@ -159,6 +151,7 @@ function scheduleDailyRefresh() {
     const results = await Promise.allSettled([
       refreshDailyCache('current', true),
       refreshDailyCache('growth', false),
+      refreshDailyCache('overseas', false),
     ]);
     if (results.some((result) => result.status === 'fulfilled')) {
       BrowserWindow.getAllWindows().forEach((window) => {
@@ -174,6 +167,7 @@ export function registerContentIpc() {
   void Promise.allSettled([
     refreshDailyCache('current', false),
     refreshDailyCache('growth', false),
+    refreshDailyCache('overseas', false),
   ]);
   scheduleDailyRefresh();
   ipcMain.handle('content:get-daily', (
@@ -182,15 +176,18 @@ export function registerContentIpc() {
     mode: CognitionMode = 'current',
     force = false,
   ) => {
-    const selectedMode: CognitionMode = mode === 'growth' ? 'growth' : 'current';
-    const refreshKey = force ? (selectedMode === 'growth' ? ++growthRotation : Date.now()) : 0;
+    const selectedMode: CognitionMode = mode === 'growth' ? 'growth' : mode === 'overseas' ? 'overseas' : 'current';
+    const refreshKey = force
+      ? selectedMode === 'growth' ? ++growthRotation : selectedMode === 'overseas' ? ++overseasRotation : Date.now()
+      : 0;
     if (category === 'digest') return force ? refreshDailyCache(selectedMode, false, refreshKey) : dailyCache[selectedMode] ?? refreshDailyCache(selectedMode, false);
     return fetchCognitionContent(category, selectedMode, refreshKey);
   });
   ipcMain.handle('content:get-github', (_event, request: GitHubRankingRequest) => fetchGitHubRanking(request));
-  ipcMain.handle('content:open-external', async (_event, rawUrl: unknown) => {
-    if (!isSafeWebUrl(rawUrl)) return false;
-    await shell.openExternal(rawUrl);
+  ipcMain.handle('content:open-external', async (_event, rawUrl: unknown, allowInternationalSources = false) => {
+    const url = normalizeArticleUrl(rawUrl, { allowInternationalSources: allowInternationalSources === true });
+    if (!url) return false;
+    await shell.openExternal(url);
     return true;
   });
   ipcMain.on('content:notify', (_event, payload: unknown) => {

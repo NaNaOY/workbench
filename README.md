@@ -1,142 +1,143 @@
 # WorkBench 个人工作台
 
-WorkBench 是一个本地优先的中文个人工作台，把任务、笔记、专注计时、快捷入口、每日资讯、认知提升和 GitHub 干货榜放在一个安静、可扩展的桌面应用里。
+WorkBench 是一个本地优先、中文交互的 Windows 桌面工作台，将今日待办、个人台账、富文本笔记、专注统计、个人题单、每日认知、GitHub 开源榜单和期货行情监控集中在一个应用中。
 
-> 目标：让信息服务于行动，而不是让更多通知占据注意力。
+> 目标：让信息服务于行动，让记录长期留在自己的电脑上。
 
-![WorkBench 每日认知预览](./docs/ui-preview-cognition.png)
-![WorkBench 工作总览预览](./docs/ui-preview-dashboard.png)
+![每日认知预览](./docs/ui-preview-cognition.png)
+![工作总览预览](./docs/ui-preview-dashboard.png)
 
-## 功能概览
+## 功能
 
-- **工作总览**：今日待办、完成进度、专注时间、最近笔记和节奏趋势。
-- **任务管理**：三列看板、优先级、截止日期、项目标签和状态切换。
-- **灵感笔记**：本地自动保存的笔记列表与编辑器。
-- **专注模式**：25 分钟番茄钟，可关联当前任务；每日统计按本地日期自动归零。
+- **工作总览**：今日待办、台账进度、专注时间、最近笔记与一周节奏。
+- **个人台账**：自定义工作、日常、学习等分类，支持 5 种沉浸式场景背景、结构化字段、搜索筛选、状态追踪、关键数值、详情编辑与 CSV 导出；旧任务数据会自动迁移并补全背景。
+- **灵感笔记**：富文本编辑、标题与引用、代码块、链接、图片粘贴和拖入截图。
+- **信息学题单**：题目来源、难度、专题、状态、标签、原题链接和解题记录。
+- **专注模式**：25 分钟计时、任务关联、按日归零、累计统计和 26 周热力图。
 - **快捷入口**：保存常用网站、文档库和工作工具。
-- **每日认知**：分为“每日资讯”和“认知提升”，覆盖政治、思维、心理、法律、经济、商业、科技、健康和电力能源等分类。
-- **GitHub 干货榜**：开源项目与 Agent Skills 的总榜、周榜，支持鼠标拖拽和左右按钮平滑浏览。
-- **本地优先存储**：不需要账号和云端数据库；桌面版会额外备份本机工作数据。
+- **每日认知**：
+  - 每日资讯：国内公开 RSS 热点；
+  - 认知提升：国内可直达的书籍、科普、法律与知识卡；
+  - Google 知识：Google 新闻、Wikipedia 和 Wikisource 独立板块，可能需要网络代理。
+- **GitHub 干货榜**：开源项目和 Agent Skills 的总榜、周榜，支持拖拽与按钮横向浏览。
+- **期货面板**：7 个新能源与工业品种自选行情、东方财富官方日 K 图、关键价位红线、六氟磷酸锂现货价格入口、产业链联动、手动/自动刷新和本机价格提醒；行情用于个人研究，不构成投资建议。
+- **本地持久化**：待办、台账、笔记、专注和认知产出保存在本机，不需要账号或云数据库。
 
-## 公开仓库边界
+## 下载与运行
 
-本仓库只包含可复现应用所需的源码、公开素材、构建配置和文档。以下内容不会被提交：
+### Windows 安装包
 
-- `node_modules/`、`dist/`、`dist-electron/`、`release/` 等依赖和构建产物；
-- `.env`、本地配置、日志和临时预览文件；
-- 任务、笔记、快捷入口、思考记录以及 Electron 用户数据目录中的 `workbench-storage.json`；
-- 任何账号密码、访问令牌或个人电脑绝对路径。
+免环境安装程序和便携版通过 [GitHub Releases](https://github.com/NaNaOY/workbench/releases) 发布：
 
-应用不内置私有 API 密钥，也不上传个人工作内容。联网功能只请求公开的 RSS 和 GitHub REST API；外部文章链接会直接指向原站。
+- `WorkBench-Setup-<version>-x64.exe`：标准安装版，可直接覆盖升级；
+- `WorkBench-Portable-<version>-x64.exe`：无需安装，下载后直接运行。
 
-详细说明见 [隐私与数据边界](./docs/privacy.md)。
+安装包已内置 Electron，使用者不需要另外安装 Node.js。当前构建未配置商业代码签名，Windows SmartScreen 可能显示“未知发布者”。
 
-## 快速开始
+### 从源码运行
 
-### 开发环境运行
-
-要求 Windows 10/11、Node.js 20 LTS 和 npm：
+开发环境要求 Windows 10/11、Node.js 20 LTS 和 npm：
 
 ```powershell
-# 克隆仓库后进入目录
+git clone https://github.com/NaNaOY/workbench.git
+cd workbench
 npm ci
-
-# 启动 Vite + Electron 开发模式
 npm run dev
 ```
 
-也可以双击根目录的 [start-workbench.cmd](./start-workbench.cmd)。首次启动会安装依赖，然后打开桌面应用。源码不能直接双击 `index.html`，因为桌面版需要 Electron 主进程。
+也可以在完成 `npm ci` 后双击根目录的 `start-workbench.cmd`。本项目是 Electron 桌面应用，不能通过直接打开 `index.html` 或 GitHub Pages 获得完整功能。
 
-### 构建与检查
+开发启动器会自动选择可用的本地端口，并把实际地址同步给 Electron；即使 5173 已被其他程序占用，也不会再出现桌面窗口连接到错误端口而空白的问题。
 
-```powershell
-npm run typecheck
-npm run build
-npm start
-```
+## 常用命令
 
-### 生成免环境 Windows 安装包
+| 命令 | 作用 |
+| --- | --- |
+| `npm run dev` | 启动 Vite 与 Electron 开发模式 |
+| `npm run typecheck` | 检查渲染层和 Electron 类型 |
+| `npm run build` | 生成生产构建 |
+| `npm start` | 运行已构建的桌面应用 |
+| `npm run package:win` | 生成安装版与便携版 |
+| `npm run package:portable` | 只生成便携版 |
 
-安装包使用 Electron Builder，产物写入被忽略的 `release/` 目录：
+构建目录 `dist/`、`dist-electron/` 和 `release/` 均为本地产物，不提交到源码仓库。详细打包流程见 [Windows 桌面版打包](./docs/packaging.md)。
 
-```powershell
-# 生成标准安装程序和便携版
-npm run package:win
+## 0.2.2 发布说明
 
-# 只生成便携版
-npm run package:portable
-```
+- 期货面板改用东方财富官方日 K 图，修复郑商所品种（纯碱、玻璃主连）K 线显示「暂无数据」的问题。
+- 全局下拉菜单支持视口边缘智能翻转与高度自适应，不再被卡片遮挡或超出屏幕。
+- 专注模式的待办场景背景改用图片元素渲染，层叠与加载更稳定。
+- 本版本同时提供 Windows 安装版与便携版，个人数据仍保存在本机，不会随安装包上传。
+## 数据与网络
 
-生成结果：
+- 工作区数据保存在浏览器 `localStorage`，桌面版同时镜像到 Electron `userData/workbench-storage.json`；
+- 卸载安装版时默认保留个人数据，便于升级或重新安装后恢复；
+- 每日资讯、GitHub 榜单、Google 知识和期货行情会请求公开网络数据；
+- 期货面板通过 Electron 主进程读取东方财富公开行情，网络异常时保留最近一次成功数据；价格提醒和每日快照只保存在本机；
+- Google 知识与国内内容源相互隔离，无代理时自动回退到内置 Wiki 卡片；
+- 应用不包含遥测，不上传任务、笔记、图片、专注记录或认知产出；
+- 医疗、法律和投资内容只用于学习，不构成专业意见。
 
-- `release/WorkBench-Setup-0.1.3-x64.exe`：标准安装程序，可创建桌面和开始菜单快捷方式；
-- `release/WorkBench-Portable-0.1.3-x64.exe`：无需安装的便携版，可复制到其他 Windows 电脑直接运行。
+更多说明：
 
-安装包不依赖 Node.js、npm 或项目源码。
-
-### 更新与卸载
-
-使用 `WorkBench-Setup-*.exe` 安装版升级时，直接运行新安装包即可覆盖旧版本。安装器会识别已有安装位置，自动移除旧版本程序文件并保留本地任务、笔记和缓存。安装版可在 Windows「设置 → 应用 → 已安装的应用」中卸载；便携版没有卸载器，关闭后删除对应 EXE 即可。当前构建未配置代码签名，Windows SmartScreen 可能显示“未知发布者”；正式分发时请使用自己的代码签名证书。安装包建议上传到 GitHub Releases，而不是提交到源码仓库。更多细节见 [桌面打包说明](./docs/packaging.md)。
+- [隐私与数据边界](./docs/privacy.md)
+- [每日认知内容源](./docs/content-sources.md)
+- [Windows 桌面版打包](./docs/packaging.md)
 
 ## 项目结构
 
 ```text
-personal-workbench/
-
-├─ docs/
-│  ├─ packaging.md                 # Windows 免环境打包说明
-│  ├─ privacy.md                   # 隐私、本地存储和网络边界
-│  ├─ ui-preview-cognition.png     # 公开界面预览
-│  └─ ui-preview-dashboard.png     # 公开界面预览
+workbench/
+├─ docs/                         # 公开文档与界面预览
 ├─ electron/
-│  ├─ main.ts                      # Electron 窗口和应用入口
-│  ├─ preload.ts                   # 受限的 IPC / 本地数据桥接
-│  ├─ storage.ts                   # 用户数据备份到 Electron userData
-│  ├─ content.ts                   # 更新调度、GitHub 请求、外链打开
-│  ├─ cognition.ts                 # 每日资讯查询和筛选
-│  ├─ feed.ts                      # 共享 RSS / XML 解析工具
-│  └─ learning.ts                  # 认知提升知识卡内容库
-├─ public/assets/                  # 应用图标、Logo 和公开界面素材
+│  ├─ main.ts                    # Electron 应用入口
+│  ├─ preload.ts                 # 最小权限 IPC 桥接
+│  ├─ storage.ts                 # 本机数据镜像
+│  ├─ content.ts                 # 更新调度、GitHub 与外链 IPC
+│  ├─ futures.ts                 # 期货公开报价与缓存 IPC
+│  ├─ cognition.ts               # 国内资讯抓取和筛选
+│  ├─ learning.ts                # 认知提升内容库
+│  ├─ overseas.ts                # Google 新闻与 Wiki 海外内容
+│  ├─ knowledge-sources.ts       # 国内知识来源路由
+│  ├─ article-url.ts             # 外链校验和旧地址迁移
+│  └─ feed.ts                    # RSS / XML 解析工具
+├─ public/assets/                # 图标、Logo 和公开界面素材
 ├─ src/
-│  ├─ App.tsx                      # 工作台主壳与全局状态
-│  ├─ AppViews.tsx                 # 仪表盘、任务、笔记等视图
-│  ├─ DailyCognitionView.tsx       # 每日资讯 / 认知提升
-│  ├─ KnowledgeViews.tsx           # GitHub 干货榜
-│  ├─ data.ts                      # 工作区数据模型
-│  ├─ storage.ts                   # 统一本地存储读写
-│  ├─ types.ts                     # 共享类型
-│  └─ *.css                        # 页面和视觉主题
-├─ electron-builder.portable.json # 便携版构建配置
-├─ package.json                    # 脚本、依赖和 Electron Builder 配置
-├─ start-workbench.cmd             # Windows 一键启动
-└─ vite.config.ts                  # Vite 构建配置
+│  ├─ components/                # 编辑器、个人台账、题单、专注统计等组件
+│  ├─ App.tsx                    # 应用壳、路由和全局状态
+│  ├─ AppViews.tsx               # 工作总览、笔记、专注等视图
+│  ├─ DailyCognitionView.tsx     # 每日认知三个模块
+│  ├─ KnowledgeViews.tsx         # GitHub 干货榜
+│  ├─ futures-config.ts          # 期货品种、阈值与展示配置
+│  ├─ data.ts                    # 默认数据与本地日期工具
+│  ├─ storage.ts                 # 统一缓存读写
+│  ├─ types.ts                   # 共享类型
+│  └─ *.css                      # 页面与主题样式
+├─ electron-builder.portable.json
+├─ package.json
+└─ vite.config.ts
 ```
 
-## 数据、隐私和网络
+## 公开仓库边界
 
-- 任务、笔记、快捷入口、思考卡和认知缓存只在本机保存；
-- 桌面版启动时会将浏览器存储镜像备份到 Electron 的用户数据目录，卸载时默认保留；
-- 每日资讯通过公开 RSS 获取，GitHub 榜单通过公开 GitHub REST API 获取；
-- 应用不包含遥测、不建立用户账号、不上传个人工作内容；
-- 医疗、法律、投资等内容仅用于学习与信息整理，不构成诊断、法律意见或投资建议。
+仓库只包含可复现应用所需的源码、公开素材、构建配置和文档。以下内容被忽略：
 
-如需清理本机数据，请先导出或备份，再清除应用对应的浏览器存储和 `workbench-storage.json`。请勿把这些文件上传到 Issue、Pull Request 或公开仓库。
+- `node_modules/`、`dist/`、`dist-electron/`、`release/`；
+- `.env`、本地配置、日志、编辑器缓存和临时设计目录；
+- `workbench-storage.json` 及任何待办、台账、笔记、图片和阅读记录；
+- 访问令牌、账号信息、个人电脑绝对路径和私有接口。
 
-## 贡献
-
-欢迎提交 Issue、改进界面、修复数据源或补充文档。提交前请运行：
+提交前建议运行：
 
 ```powershell
 npm run typecheck
 npm run build
 ```
 
-请不要在 Issue 或 Pull Request 中粘贴任务内容、笔记内容、用户目录路径、访问令牌或其他个人数据。
+## 贡献与许可
 
-## 许可证
+欢迎提交 Issue 和 Pull Request。请勿在公开内容中粘贴任务、笔记、访问令牌、本机路径或其他个人数据。
 
-本项目以 MIT License 开源，详见 [LICENSE](./LICENSE)。第三方网站、RSS 内容、项目图标和用户自有素材仍受其各自许可约束。
+项目使用 [MIT License](./LICENSE)。第三方网站内容、外部 RSS、图标和用户自有素材仍受各自许可约束。
 
-## 当前版本
-
-`0.1.3`。项目已通过 TypeScript 类型检查和生产构建；Windows 安装包由发布者在 GitHub Releases 中单独提供。
+当前源码版本：`0.2.2`。

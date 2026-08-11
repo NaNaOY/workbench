@@ -19,3 +19,21 @@ workbench-storage.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Editor, cache, and local tooling
+.vscode/
+.idea/
+*.code-workspace
+*.tsbuildinfo
+coverage/
+.cache/
+tmp/
+*.tmp
+*.bak
+npm-debug.log*
+
+# Local design / agent workspaces
+design-system/
+.design-qa/
+.codex/
+.agents/
