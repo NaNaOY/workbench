@@ -1,6 +1,7 @@
 @echo off
 setlocal
-title WorkBench 个人工作台
+chcp 65001 >nul
+title WorkBench Personal Workspace
 
 cd /d "%~dp0"
 
@@ -15,7 +16,7 @@ if not exist "node_modules\" (
   )
 )
 
-echo 正在启动 WorkBench...
+echo 正在启动 WorkBench，开发服务会自动选择可用端口...
 call npm run dev
 
 if errorlevel 1 pause

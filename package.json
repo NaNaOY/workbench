@@ -1,7 +1,7 @@
 {
   "name": "personal-workbench",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A local-first desktop personal workbench",
   "license": "MIT",
   "repository": {
@@ -11,9 +11,9 @@
   "homepage": "https://github.com/NaNaOY/workbench",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev": "node scripts/dev.mjs",
     "dev:renderer": "vite",
-    "dev:electron": "wait-on tcp:5173 && npm run build:electron && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
+    "dev:electron": "node scripts/dev.mjs",
     "build": "npm run build:renderer && npm run build:electron",
     "build:renderer": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
@@ -25,7 +25,8 @@
   "dependencies": {
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.12",

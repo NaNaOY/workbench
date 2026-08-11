@@ -203,3 +203,13 @@ kbd { padding: 2px 5px; border: 1px solid #d9dce6; border-bottom-width: 2px; bor
   .problems-categories { border-right: 0; border-bottom: 1px solid #e8eaf1; }
   .problems-stats { grid-template-columns: repeat(4, 1fr); }
 }
+/* 2026-08 density refinement: fill the usable problem-library viewport. */
+.workspace--problems .problems-layout {
+  min-height: calc(100dvh - 126px);
+}
+
+@media (max-width: 850px) {
+  .workspace--problems .problems-layout {
+    min-height: 560px;
+  }
+}

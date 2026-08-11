@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('desktop', {
   },
   getGitHubRanking: (request: { category: 'projects' | 'skills'; period: 'all' | 'week' }) =>
     ipcRenderer.invoke('content:get-github', request),
+  getFuturesMarket: (selectedKey?: string) => ipcRenderer.invoke('futures:get-market', selectedKey),
   openExternal: (url: string, allowInternationalSources = false) => ipcRenderer.invoke('content:open-external', url, allowInternationalSources),
   notify: (title: string, body: string) => ipcRenderer.send('content:notify', { title, body }),
 });

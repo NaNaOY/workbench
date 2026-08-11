@@ -57,6 +57,7 @@ type DesktopApi = {
     category: DesktopRankingCategory;
     period: DesktopRankingPeriod;
   }) => Promise<DesktopRankingResponse>;
+  getFuturesMarket: (selectedKey?: string) => Promise<unknown>;
   openExternal: (url: string, allowInternationalSources?: boolean) => Promise<boolean>;
   notify: (title: string, body: string) => void;
 };
