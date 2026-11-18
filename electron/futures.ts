@@ -41,7 +41,7 @@ const QUOTE_HOSTS = [
 const quoteCache = new Map<FutureContractKey, FuturesQuote>();
 
 const headers = {
-  'User-Agent': 'WorkBench-Desktop/0.2.2',
+  'User-Agent': 'WorkBench-Desktop/0.2.3',
   Accept: 'application/json,text/plain,*/*',
   Referer: 'https://quote.eastmoney.com/',
 };
