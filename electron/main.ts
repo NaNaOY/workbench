@@ -2,6 +2,7 @@ import { app, BrowserWindow, nativeTheme } from 'electron';
 import path from 'node:path';
 import { registerContentIpc } from './content';
 import { registerStorageIpc } from './storage';
+import { registerFuturesIpc } from './futures';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -34,6 +35,7 @@ function createWindow() {
 app.whenReady().then(() => {
   registerStorageIpc();
   registerContentIpc();
+  registerFuturesIpc();
   createWindow();
 
   app.on('activate', () => {

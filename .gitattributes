@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+# Preserve CRLF bytes in GitHub source archives as well as checkouts.
+*.cmd -text whitespace=cr-at-eol
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary

@@ -19,5 +19,6 @@
     ],
     "icon": "public/assets/workbench-icon.ico",
     "signAndEditExecutable": false
-  }
+  },
+  "artifactName": "WorkBench-Portable-${version}-${arch}.${ext}"
 }

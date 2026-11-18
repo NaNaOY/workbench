@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { readStoredJson, readStoredText, writeStoredJson, writeStoredText, STORAGE_KEYS } from './storage';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink, Globe2, RefreshCw } from 'lucide-react';
 import './cognition.css';
 
 type CategoryId = DesktopCognitionCategory;
-type CognitionMode = 'current' | 'growth';
+type CognitionMode = 'current' | 'growth' | 'overseas';
 
 interface Board {
   id: CategoryId;
@@ -63,14 +63,21 @@ const modules: Array<{
     icon: '讯',
     label: '每日资讯',
     eyebrow: '紧跟国内热点',
-    description: '国内热点、行业变化、经济脉搏与科技动态',
+    description: '掌握国内正在发生的热点，以及它为何值得关注。',
   },
   {
     id: 'growth',
     icon: '学',
     label: '认知提升',
     eyebrow: '每天学会一件事',
-    description: '书籍思想、科普知识、实用模型与可迁移方法',
+    description: '每天真正学会一个概念、模型或方法。',
+  },
+  {
+    id: 'overseas',
+    icon: 'G',
+    label: 'Google 知识',
+    eyebrow: '海外开放知识',
+    description: '从 Google 新闻与开放知识库获得另一种视角。',
   },
 ];
 
@@ -225,9 +232,9 @@ function formatArticleDate(value: string) {
   return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
 }
 
-function openArticle(url: string) {
+function openArticle(url: string, allowInternationalSources = false) {
   const desktop = api();
-  if (desktop?.openExternal) void desktop.openExternal(url);
+  if (desktop?.openExternal) void desktop.openExternal(url, allowInternationalSources);
   else window.open(url, '_blank', 'noopener,noreferrer');
 }
 
@@ -321,8 +328,12 @@ export default function DailyCognitionView() {
   }, [items, mode, category]);
 
   const featured = items[0];
-  const thinkingQuestion = mode === 'growth' ? board.growthQuestion : board.question;
-  const feedLabel = mode === 'growth' ? '知识卡片' : '国内热点';
+  const thinkingQuestion = mode === 'growth'
+    ? board.growthQuestion
+    : mode === 'overseas'
+      ? '这条海外内容提供了什么新视角？哪些事实仍需要与国内来源交叉验证？'
+      : board.question;
+  const feedLabel = mode === 'growth' ? '知识卡片' : mode === 'overseas' ? '海外知识卡片' : '国内热点';
   const feedItems = items.slice(1, 6);
   const relatedItems = items.slice(0, 6);
   const relatedItem = relatedItems.find((item) => item.id === relatedItemId) ?? featured;
@@ -337,7 +348,7 @@ export default function DailyCognitionView() {
       id: crypto.randomUUID(),
       mode,
       category,
-      categoryLabel: category === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : board.label,
+      categoryLabel: category === 'digest' ? (mode === 'growth' ? '今日学习' : mode === 'overseas' ? '海外总览' : '今日资讯') : board.label,
       question: thinkingQuestion,
       content,
       createdAt: new Date().toISOString(),
@@ -373,38 +384,38 @@ export default function DailyCognitionView() {
   return (
     <div className={`cognition-page cognition-page--${mode}`}>
       <section className="cognition-header">
-        <div>
-          <h2>{mode === 'growth' ? '每天真正学会一个概念、模型或方法。' : '掌握国内正在发生的热点，以及它为何值得关注。'}</h2>
-          <p>
-            {mode === 'growth'
-              ? '内容来自书籍核心思想与严谨科普，由工作台重组为“核心概念、适用场景、自测问题”；不混入公告、快讯和情绪文案。'
-              : '聚焦国内社会、法律、经济、商业、科技与行业变化；扩大可信媒体范围，优先时效、事实和现实影响。'}
-          </p>
-        </div>
-        <div className="cognition-status">
-          <span><i /> 每日 08:00 自动更新</span>
-          <small>{fetchedAt ? `本板块更新于 ${formatTime(fetchedAt)}` : '等待首次更新'}</small>
-          {feedback && <em>{feedback}</em>}
-          <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '正在更新…' : '更新本板块'}</button>
+        <div className="cognition-header-row">
+          <div className="cognition-header-left">
+            <div className="cognition-module-tabs cognition-module-tabs--inline" aria-label="每日认知内容模块">
+              {modules.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={mode === item.id ? 'active' : ''}
+                  onClick={() => {
+                    setMode(item.id);
+                    setCategory('digest');
+                  }}
+                >
+                  <span>{item.icon}</span>
+                  <strong>{item.label}</strong>
+                </button>
+              ))}
+            </div>
+            <h2>{activeModule.description}</h2>
+          </div>
+          <button
+            type="button"
+            className="cognition-refresh-btn"
+            onClick={() => void refresh()}
+            disabled={loading}
+            title={feedback || '点击更新本板块'}
+          >
+            <RefreshCw size={14} className={loading ? 'spinning' : ''} />
+            <span>{loading ? '更新中…' : fetchedAt ? `更新于 ${formatTime(fetchedAt)}` : '立即更新'}</span>
+          </button>
         </div>
       </section>
-
-      <nav className="cognition-module-tabs cognition-module-tabs--standalone" aria-label="每日认知内容模块">
-            {modules.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                className={mode === item.id ? 'active' : ''}
-                onClick={() => {
-                  setMode(item.id);
-                  setCategory('digest');
-                }}
-              >
-                <span>{item.icon}</span>
-                <strong>{item.label}</strong>
-              </button>
-            ))}
-      </nav>
 
       <section className="cognition-control-panel">
         <nav className="cognition-category-strip" aria-label={`${activeModule.label}分类`}>
@@ -416,13 +427,23 @@ export default function DailyCognitionView() {
               onClick={() => setCategory(item.id)}
             >
               <span>{item.icon}</span>
-              {item.id === 'digest' ? (mode === 'growth' ? '今日学习' : '今日资讯') : item.label}
+              {item.id === 'digest' ? (mode === 'growth' ? '今日学习' : mode === 'overseas' ? '海外总览' : '今日资讯') : item.label}
             </button>
           ))}
         </nav>
       </section>
 
 
+
+      {mode === 'overseas' && (
+        <div className="cognition-source-notice" role="status">
+          <Globe2 size={18} aria-hidden="true" />
+          <div>
+            <strong>海外来源独立展示</strong>
+            <span>内容来自 Google 新闻、Wikipedia 与 Wikisource；在中国大陆访问时可能需要网络代理。</span>
+          </div>
+        </div>
+      )}
 
       {error && <div className="cognition-alert">联网更新暂时失败，已保留上一次内容。{error}</div>}
 
@@ -461,14 +482,14 @@ export default function DailyCognitionView() {
               <h3>{featured.title}</h3>
               <p>{featured.summary || '阅读完整内容，理解核心概念、适用场景与方法边界。'}</p>
               <div className="cognition-feature-actions">
-                <button type="button" onClick={() => openArticle(featured.url)}>{mode === 'growth' ? '查看知识来源' : '阅读资讯原文'} <ExternalLink size={13} /></button>
+                <button type="button" onClick={() => openArticle(featured.url, mode === 'overseas')}>{mode === 'growth' ? '查看知识来源' : mode === 'overseas' ? '打开海外来源' : '阅读资讯原文'} <ExternalLink size={13} /></button>
               </div>
               <div className="knowledge-drawer open">
                 <div>
                   <header><strong>{feedLabel}</strong><small>点击条目阅读来源；写笔记时可在右侧选择关联</small></header>
                   <div className="knowledge-drawer-list">
                     {feedItems.map((item, index) => (
-                      <button type="button" key={item.id} onClick={() => openArticle(item.url)}>
+                      <button type="button" key={item.id} onClick={() => openArticle(item.url, mode === 'overseas')}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
                         <div><strong>{item.title}</strong><small>{item.source} · {formatArticleDate(item.publishedAt)}</small></div>
                         <b><ExternalLink size={13} /></b>
@@ -522,12 +543,12 @@ export default function DailyCognitionView() {
               setReflection(event.target.value);
               writeStoredText(reflectionKey, event.target.value);
             }}
-            placeholder={mode === 'growth' ? '写下核心概念、适用场景和你准备练习的方法…' : '写下事实、判断依据和仍不确定的部分…'}
+            placeholder={mode === 'growth' ? '写下核心概念、适用场景和你准备练习的方法…' : mode === 'overseas' ? '记录它提供的新视角、事实依据和需要交叉验证的部分…' : '写下事实、判断依据和仍不确定的部分…'}
           />
           <div className="cognition-question-actions">
-            <small>{mode === 'growth' ? '草稿会自动保留；点击保存后形成一张长期认知卡。' : '草稿会自动保留；点击保存后进入认知产出。'}</small>
+            <small>{mode === 'growth' ? '草稿会自动保留；点击保存后形成一张长期认知卡。' : mode === 'overseas' ? '草稿会自动保留；建议与国内来源交叉验证后再保存。' : '草稿会自动保留；点击保存后进入认知产出。'}</small>
             <button type="button" onClick={saveReflection} disabled={!reflection.trim()}>
-              {mode === 'growth' ? '保存学习卡' : '保存思考记录'}
+              {mode === 'growth' ? '保存学习卡' : mode === 'overseas' ? '保存海外阅读卡' : '保存思考记录'}
             </button>
           </div>
         </article>
@@ -546,7 +567,7 @@ export default function DailyCognitionView() {
             {reflectionHistory.slice(0, 6).map((entry) => (
               <article key={entry.id}>
                 <div>
-                  <span>{entry.mode === 'growth' ? '学习卡' : '思考记录'} · {entry.categoryLabel}</span>
+                  <span>{entry.mode === 'growth' ? '学习卡' : entry.mode === 'overseas' ? '海外阅读' : '思考记录'} · {entry.categoryLabel}</span>
                   <small>{formatTime(entry.createdAt)}</small>
                 </div>
                 <strong>{entry.question}</strong>
@@ -554,7 +575,7 @@ export default function DailyCognitionView() {
                   <button
                     type="button"
                     className="cognition-output-related"
-                    onClick={() => entry.relatedUrl && openArticle(entry.relatedUrl)}
+                    onClick={() => entry.relatedUrl && openArticle(entry.relatedUrl, entry.mode === 'overseas')}
                   >
                     关联：{entry.relatedTitle} {entry.relatedSource ? `· ${entry.relatedSource}` : ''}
                   </button>

@@ -127,6 +127,7 @@ export function GitHubRankingView() {
 
   const handleCarouselPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    if ((event.target as HTMLElement).closest('button, a')) return;
     const track = event.currentTarget;
     stopScrollAnimation(track);
     const now = performance.now();
@@ -225,6 +226,26 @@ export function GitHubRankingView() {
       void refresh();
     }
   }, [cacheKey, refresh]);
+
+  useEffect(() => {
+    if (fetchedAt) {
+      const lastFetch = new Date(fetchedAt);
+      const today8AM = new Date();
+      today8AM.setHours(8, 0, 0, 0);
+      if (lastFetch < today8AM) {
+        void refresh();
+        return;
+      }
+    }
+    const now = new Date();
+    const next8AM = new Date();
+    next8AM.setHours(8, 0, 0, 0);
+    if (now >= next8AM) {
+      next8AM.setDate(next8AM.getDate() + 1);
+    }
+    const timer = window.setTimeout(() => void refresh(), next8AM.getTime() - now.getTime());
+    return () => window.clearTimeout(timer);
+  }, [fetchedAt, refresh]);
 
   return (
     <div className="knowledge-page">
